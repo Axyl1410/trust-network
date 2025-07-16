@@ -1,8 +1,17 @@
+"use client";
+
+import { WalletConnectButton } from "@/components/ui/wallet-button";
+import { thirdwebClient } from "@/lib/thirdweb";
 import Image from "next/image";
+import { ConnectButton } from "thirdweb/react";
 
 export default function Home() {
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
+      <WalletConnectButton />
+      <div className="sr-only">
+        <ConnectButton client={thirdwebClient} />
+      </div>
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <Image
           className="dark:invert"
