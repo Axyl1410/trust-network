@@ -6,12 +6,12 @@ import { prepareContractCall } from "thirdweb";
 import { TransactionButton } from "thirdweb/react";
 import getThirdwebContract from "../get-contract";
 
-interface CreateCommentProps {
-	companyId: bigint;
-	content: string;
+interface Props {
+	commentId: bigint;
+	isUpvote: boolean;
 }
 
-export default function CreateComment({ companyId, content }: CreateCommentProps) {
+export default function Vote({ commentId, isUpvote }: Props) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [currentStep, setCurrentStep] = useState<TransactionStep>("sent");
 	const [message, setMessage] = useState("");
@@ -29,8 +29,8 @@ export default function CreateComment({ companyId, content }: CreateCommentProps
 					transaction={async () => {
 						const transaction = prepareContractCall({
 							contract,
-							method: "function createComment(uint256 companyId, string content) returns (uint256)",
-							params: [companyId, content],
+							method: "function vote(uint256 commentId, bool isUpvote)",
+							params: [commentId, isUpvote],
 						});
 
 						setIsOpen(true);
@@ -49,7 +49,7 @@ export default function CreateComment({ companyId, content }: CreateCommentProps
 						setMessage("Transaction failed: " + error.message);
 					}}
 				>
-					Create Comment
+					Vote
 				</TransactionButton>
 			</Button>
 			<TransactionDialog

@@ -1,6 +1,6 @@
 "use client";
 
-import { WalletConnectButton } from "@/components/ui/wallet-button";
+import { WalletConnectButton } from "@/components/common/wallet-button";
 import { thirdwebClient } from "@/lib/thirdweb";
 import CreateComment from "@/service/write-function/create-comment";
 import Image from "next/image";
