@@ -1,11 +1,11 @@
 "use client";
 
-<<<<<<< HEAD
 
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
+import { useCompanyNameToId } from "@/service/read-function/company-name-to-id";
 
 const categories = [
   { icon: "🏦", name: "Bank" },
@@ -31,6 +31,9 @@ export default function HomePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [chainCheck, setChainCheck] = useState<null | "checking" | "found" | "notfound">(null);
+
+  const { data: companyId, isLoading } = useCompanyNameToId(search);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -70,9 +73,21 @@ export default function HomePage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/review?query=${encodeURIComponent(search)}`);
+    setChainCheck("checking");
+    // Nếu có trong local suggestions thì chuyển luôn
+    if (suggestions.includes(search)) {
+      router.push(`/review?query=${encodeURIComponent(search)}`);
+      return;
+    }
+    // Kiểm tra trên chain
+    if (!isLoading && companyId && companyId?.toString() !== '0') {
+      setChainCheck("found");
+      router.push(`/review?query=${encodeURIComponent(search)}`);
+    } else {
+      setChainCheck("notfound");
+    }
   };
 
   return (
@@ -96,10 +111,41 @@ export default function HomePage() {
             ref={inputRef}
             type="text"
             value={search}
-            onChange={handleChange}
+            onChange={e => {
+              const value = e.target.value;
+              setSearch(value);
+              if (value.trim()) {
+                setSuggestions(
+                  allSuggestions.filter((s) =>
+                    s.toLowerCase().includes(value.toLowerCase())
+                  )
+                );
+                setShowDropdown(true);
+              } else {
+                setSuggestions([]);
+                setShowDropdown(false);
+              }
+              setHighlight(-1);
+              setChainCheck(null);
+            }}
             onFocus={() => search && setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 100)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={e => {
+              if (!showDropdown || suggestions.length === 0) return;
+              if (e.key === "ArrowDown") {
+                setHighlight((h) => (h + 1) % suggestions.length);
+              } else if (e.key === "ArrowUp") {
+                setHighlight((h) => (h - 1 + suggestions.length) % suggestions.length);
+              } else if (e.key === "Enter") {
+                if (highlight >= 0 && highlight < suggestions.length) {
+                  setSearch(suggestions[highlight]);
+                  setShowDropdown(false);
+                  router.push(`/review?query=${encodeURIComponent(suggestions[highlight])}`);
+                } else {
+                  handleSubmit(e as any);
+                }
+              }
+            }}
             placeholder="Search company or category"
             className="flex-1 bg-transparent outline-none border-0 text-base px-2 py-2"
           />
@@ -112,7 +158,11 @@ export default function HomePage() {
                 <li
                   key={s}
                   className={`px-4 py-2 cursor-pointer hover:bg-blue-100 ${i === highlight ? "bg-blue-100" : ""}`}
-                  onMouseDown={() => handleSelect(s)}
+                  onMouseDown={() => {
+                    setSearch(s);
+                    setShowDropdown(false);
+                    router.push(`/review?query=${encodeURIComponent(s)}`);
+                  }}
                   onMouseEnter={() => setHighlight(i)}
                 >
                   {s}
@@ -121,6 +171,11 @@ export default function HomePage() {
             </ul>
           )}
         </form>
+        {chainCheck === "notfound" && (
+          <div className="text-center my-6 bg-white border rounded-lg p-6 shadow-sm">
+            <p className="mb-2 text-gray-700">Không tìm thấy công ty. Bạn muốn <Link href="/create-company" className="text-blue-600 underline">tạo mới doanh nghiệp</Link>?</p>
+          </div>
+        )}
         <div className="text-sm text-gray-500 mb-2">
           Bought something recently?{' '}
           <Link href="/review" className="text-blue-700 font-semibold hover:underline">Write a review →</Link>
@@ -144,97 +199,4 @@ export default function HomePage() {
       </section>
     </div>
   );
-=======
-import { WalletConnectButton } from "@/components/common/wallet-button";
-import { thirdwebClient } from "@/lib/thirdweb";
-import CreateComment from "@/service/write-function/create-comment";
-import Image from "next/image";
-import { ConnectButton } from "thirdweb/react";
-
-export default function Home() {
-	return (
-		<div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-sans sm:p-20">
-			<WalletConnectButton />
-			<div className="sr-only">
-				<ConnectButton client={thirdwebClient} />
-			</div>
-			<CreateComment companyId={0n} content={""} />
-			<main className="row-start-2 flex flex-col items-center gap-[32px] sm:items-start">
-				<Image
-					className="dark:invert"
-					src="/next.svg"
-					alt="Next.js logo"
-					width={180}
-					height={38}
-					priority
-				/>
-				<ol className="list-inside list-decimal text-center font-mono text-sm/6 sm:text-left">
-					<li className="mb-2 tracking-[-.01em]">
-						Get started by editing{" "}
-						<code className="rounded bg-black/[.05] px-1 py-0.5 font-mono font-semibold dark:bg-white/[.06]">
-							app/page.tsx
-						</code>
-						.
-					</li>
-					<li className="tracking-[-.01em]">Save and see your changes instantly.</li>
-				</ol>
-
-				<div className="flex flex-col items-center gap-4 sm:flex-row">
-					<a
-						className="bg-foreground text-background flex h-10 items-center justify-center gap-2 rounded-full border border-solid border-transparent px-4 text-sm font-medium transition-colors hover:bg-[#383838] sm:h-12 sm:w-auto sm:px-5 sm:text-base dark:hover:bg-[#ccc]"
-						href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						<Image
-							className="dark:invert"
-							src="/vercel.svg"
-							alt="Vercel logomark"
-							width={20}
-							height={20}
-						/>
-						Deploy now
-					</a>
-					<a
-						className="flex h-10 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-4 text-sm font-medium transition-colors hover:border-transparent hover:bg-[#f2f2f2] sm:h-12 sm:w-auto sm:px-5 sm:text-base md:w-[158px] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-						href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						Read our docs
-					</a>
-				</div>
-			</main>
-			<footer className="row-start-3 flex flex-wrap items-center justify-center gap-[24px]">
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/file.svg" alt="File icon" width={16} height={16} />
-					Learn
-				</a>
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/window.svg" alt="Window icon" width={16} height={16} />
-					Examples
-				</a>
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
-					Go to nextjs.org →
-				</a>
-			</footer>
-		</div>
-	);
->>>>>>> origin/dev
 }

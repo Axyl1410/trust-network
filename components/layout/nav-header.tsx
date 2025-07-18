@@ -11,15 +11,15 @@ export default function NavHeader() {
       <div className="w-full max-w-6xl mx-auto flex items-center h-16 px-4 sm:px-8">
         {/* Logo trái */}
         <div className="flex items-center min-w-[140px]">
-          <span className="text-green-600 text-xl mr-2">★</span>
-          <span className="font-semibold text-lg text-gray-900">Trust Network</span>
+          
+          <Link href="/"> <span className="text-green-600 text-xl mr-2">★</span>
+          <span className="font-semibold text-lg text-gray-900">Trust Network</span></Link>
         </div>
         {/* Links căn giữa - ẩn trên mobile */}
         <nav className="flex-1 justify-center gap-8 hidden md:flex">
           <Link href="/review" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition">Write a review</Link>
           <Link href="/categories" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition">Categories</Link>
           <Link href="/blog" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition">Blog</Link>
-          <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition">Log in</Link>
         </nav>
         {/* Nút phải - ẩn trên mobile */}
         <div className="flex items-center gap-3 min-w-[180px] justify-end hidden md:flex">

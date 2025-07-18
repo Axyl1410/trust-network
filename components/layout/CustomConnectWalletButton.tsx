@@ -25,7 +25,7 @@ export function CustomConnectWalletButton() {
         className="px-4 py-2 rounded bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition shadow-sm flex items-center gap-2"
       >
         <Wallet size={18} />
-        Connect Wallet
+        Login
       </button>
     );
   }
