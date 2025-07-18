@@ -29,7 +29,7 @@ export default function DisconnectButton({ className }: DisconnectButtonProps) {
 					variant="ghost"
 					className={cn(
 						className,
-						"flex w-full !cursor-pointer items-center justify-start !gap-3 !p-3 hover:bg-[#f2eff3]",
+						"flex w-full !cursor-pointer items-center justify-start !gap-3 !p-3 text-base hover:bg-[#f2eff3]",
 					)}
 				>
 					<div className="h-6 w-6">

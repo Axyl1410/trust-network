@@ -1,17 +1,19 @@
 import TransactionDialog, { TransactionStep } from "@/components/common/transaction-dialog";
 import { Button } from "@/components/ui/button";
 import { Contract } from "@/constant/contract";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useState } from "react";
 import { prepareContractCall } from "thirdweb";
 import { TransactionButton } from "thirdweb/react";
 import getThirdwebContract from "../get-contract";
 
-interface Props {
+interface VoteButtonProps {
 	commentId: bigint;
 	isUpvote: boolean;
+	children: React.ReactNode;
 }
 
-export default function Vote({ commentId, isUpvote }: Props) {
+function VoteButton({ commentId, isUpvote, children }: VoteButtonProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [currentStep, setCurrentStep] = useState<TransactionStep>("sent");
 	const [message, setMessage] = useState("");
@@ -23,7 +25,7 @@ export default function Vote({ commentId, isUpvote }: Props) {
 
 	return (
 		<>
-			<Button className="relative" asChild>
+			<Button className="relative" variant={"ghost"} asChild>
 				<TransactionButton
 					unstyled
 					transaction={async () => {
@@ -49,7 +51,7 @@ export default function Vote({ commentId, isUpvote }: Props) {
 						setMessage("Transaction failed: " + error.message);
 					}}
 				>
-					Vote
+					{children}
 				</TransactionButton>
 			</Button>
 			<TransactionDialog
@@ -60,5 +62,21 @@ export default function Vote({ commentId, isUpvote }: Props) {
 				message={message}
 			/>
 		</>
+	);
+}
+
+export function UpvoteButton({ commentId }: { commentId: bigint }) {
+	return (
+		<VoteButton commentId={commentId} isUpvote={true}>
+			<ThumbsUp className="h-4 w-4" />
+		</VoteButton>
+	);
+}
+
+export function DownvoteButton({ commentId }: { commentId: bigint }) {
+	return (
+		<VoteButton commentId={commentId} isUpvote={false}>
+			<ThumbsDown className="h-4 w-4" />
+		</VoteButton>
 	);
 }
