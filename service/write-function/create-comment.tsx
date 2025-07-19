@@ -27,7 +27,7 @@ export default function CreateComment({ companyId, content, rating }: CreateComm
 							contract,
 							method:
 								"function createComment(uint256 companyId, string content, uint256 rating) returns (uint256)",
-							params: [companyId, content, BigInt(rating)],
+							params: [companyId, content, rating],
 						});
 
 						setIsOpen(true);
