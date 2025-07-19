@@ -36,6 +36,9 @@ contract CompanyCommentVoteV3 {
     mapping(uint => mapping(address => bool)) public hasVoted;
     mapping(uint => mapping(address => bool)) public hasReported;
     mapping(address => int) public reputation;
+    
+    // Thêm mapping lưu các commentId theo address
+    mapping(address => uint[]) public userComments;
 
     event CompanyCreated(uint id, string name, address admin);
     event CommentCreated(uint companyId, uint commentId, address author, string content);
@@ -146,6 +149,8 @@ contract CompanyCommentVoteV3 {
             0
         );
         companyComments[companyId].push(commentCount);
+        // Lưu commentId vào mapping userComments
+        userComments[msg.sender].push(commentCount);
         emit CommentCreated(companyId, commentCount, msg.sender, content);
         return commentCount;
     }
@@ -254,6 +259,16 @@ contract CompanyCommentVoteV3 {
     // Get all comment details of a company
     function getAllCommentsOfCompany(uint companyId) public view returns (Comment[] memory) {
         uint[] memory ids = companyComments[companyId];
+        Comment[] memory result = new Comment[](ids.length);
+        for (uint i = 0; i < ids.length; i++) {
+            result[i] = comments[ids[i]];
+        }
+        return result;
+    }
+
+    // Lấy tất cả comment của một user theo address
+    function getCommentsByUser(address user) public view returns (Comment[] memory) {
+        uint[] memory ids = userComments[user];
         Comment[] memory result = new Comment[](ids.length);
         for (uint i = 0; i < ids.length; i++) {
             result[i] = comments[ids[i]];
