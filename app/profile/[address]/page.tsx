@@ -330,7 +330,7 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 									<Card className="border-0 shadow-none">
 										<CardContent className="py-8 text-center">
 											<p className="text-muted-foreground">
-												No reviews yet. This user hasn't reviewed any companies.
+												No reviews yet. This user hasn&apos;t reviewed any companies.
 											</p>
 										</CardContent>
 									</Card>

@@ -9,6 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetCommentsByUser } from "@/service/read-function/get-comments-by-user";
 import { Comment, Company, FeedPost, ProfileUserData } from "@/types";
+import {
+	formatCommentDate,
+	formatCompanyName,
+	formatRating,
+	formatUserDisplayName,
+} from "@/utils/format";
 import { useActiveAccount } from "thirdweb/react";
 
 // Mock data cho feed posts
@@ -60,24 +66,12 @@ export default function ProfilePage() {
 	const getCompanyName = (companyId: bigint): string => {
 		if (!companies) return "Unknown Company";
 		const company = companies.find((c: Company) => c.id === companyId);
-		return company ? company.name : "Unknown Company";
-	};
-
-	// Format timestamp
-	const formatDate = (timestamp: bigint): string => {
-		return new Date(Number(timestamp) * 1000).toLocaleDateString();
-	};
-
-	// Render star rating
-	const renderStars = (rating: number): string => {
-		return "★".repeat(rating) + "☆".repeat(5 - rating);
+		return company ? formatCompanyName(company.name) : "Unknown Company";
 	};
 
 	// Mock user data
 	const userData: ProfileUserData = {
-		name: account?.address
-			? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
-			: "Anonymous",
+		name: account?.address ? formatUserDisplayName(account.address) : "Anonymous",
 		username: account?.address ? account.address.slice(2, 8) : "anonymous",
 		bio: "Web3 Developer & Blockchain Enthusiast. Building the future of decentralized applications.",
 		following: 193,
@@ -279,12 +273,12 @@ export default function ProfilePage() {
 														<div>
 															<h4 className="font-semibold">{getCompanyName(comment.companyId)}</h4>
 															<p className="text-muted-foreground text-sm">
-																{formatDate(comment.createdAt)}
+																{formatCommentDate(comment.createdAt)}
 															</p>
 														</div>
 														<div className="text-right">
 															<div className="text-sm text-yellow-500">
-																{renderStars(Number(comment.rating))}
+																{formatRating(Number(comment.rating))}
 															</div>
 															<p className="text-muted-foreground text-xs">
 																Rating: {comment.rating}/5
