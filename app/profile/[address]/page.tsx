@@ -1,6 +1,5 @@
 "use client";
 
-import NavHeaderClient from "@/components/layout/NavHeaderClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -109,9 +108,6 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 
 	return (
 		<div className="bg-background min-h-screen">
-			{/* Navigation Header */}
-			<NavHeaderClient />
-
 			{/* Main Profile Container */}
 			<div className="container mx-auto max-w-4xl">
 				{/* Mobile Action Buttons */}

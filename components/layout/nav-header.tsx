@@ -16,6 +16,7 @@ export default function NavHeader() {
 					<span className="mr-2 text-xl text-green-600">★</span>
 					<span className="text-lg font-semibold text-gray-900">Trust Network</span>
 				</Link>
+
 				{/* Links căn giữa - ẩn trên mobile */}
 				<nav className="hidden flex-1 justify-center gap-8 md:flex">
 					<Link
@@ -43,8 +44,9 @@ export default function NavHeader() {
 						Log in
 					</Link>
 				</nav>
+
 				{/* Nút phải - ẩn trên mobile */}
-				<div className="flex hidden min-w-[180px] items-center justify-end gap-3 md:flex">
+				<div className="hidden min-w-[180px] items-center justify-end gap-3 md:flex">
 					<Link
 						href="/business"
 						className="rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
@@ -53,6 +55,7 @@ export default function NavHeader() {
 					</Link>
 					<WalletConnectButton />
 				</div>
+
 				{/* Hamburger menu - chỉ hiện trên mobile */}
 				<button
 					className="ml-auto flex items-center justify-center rounded p-2 hover:bg-gray-100 md:hidden"
@@ -62,6 +65,7 @@ export default function NavHeader() {
 					<Menu size={26} />
 				</button>
 			</div>
+
 			{/* Mobile menu overlay */}
 			{open && (
 				<div
@@ -117,12 +121,12 @@ export default function NavHeader() {
 							>
 								For businesses
 							</Link>
-							{/* <CustomConnectWalletButton /> */}
 							<WalletConnectButton />
 						</div>
 					</div>
 				</div>
 			)}
+
 			<style jsx global>{`
 				@keyframes slide-in-left {
 					0% {

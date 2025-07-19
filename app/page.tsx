@@ -72,7 +72,7 @@ export default function HomePage() {
 	return (
 		<div className="min-h-screen w-full bg-white">
 			{/* Hero Section */}
-			<section className="relative flex w-full flex-col items-center justify-center overflow-x-hidden bg-white px-2 pt-16 pb-8">
+			<section className="relative flex w-full flex-col items-center justify-center overflow-hidden bg-white px-2 pt-16 pb-8">
 				{/* Decorative circles */}
 				<div className="absolute top-0 left-0 -z-10 h-72 w-72 -translate-x-1/3 -translate-y-1/3 rounded-full bg-yellow-100" />
 				<div className="absolute top-1/3 right-0 -z-10 h-60 w-60 translate-x-1/3 -translate-y-1/3 rounded-full bg-orange-100" />

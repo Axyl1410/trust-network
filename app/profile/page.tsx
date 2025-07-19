@@ -1,6 +1,5 @@
 "use client";
 
-import NavHeaderClient from "@/components/layout/NavHeaderClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -82,9 +81,6 @@ export default function ProfilePage() {
 
 	return (
 		<div className="bg-background min-h-screen">
-			{/* Navigation Header */}
-			<NavHeaderClient />
-
 			{/* Main Profile Container */}
 			<div className="container mx-auto max-w-4xl">
 				{/* Mobile Action Buttons */}
@@ -303,7 +299,7 @@ export default function ProfilePage() {
 									<Card className="border-0 shadow-none">
 										<CardContent className="py-8 text-center">
 											<p className="text-muted-foreground">
-												No reviews yet. Start reviewing companies!
+												No reviews yet. This user hasn&apos;t reviewed any companies.
 											</p>
 										</CardContent>
 									</Card>
