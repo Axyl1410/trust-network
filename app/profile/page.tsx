@@ -80,7 +80,7 @@ export default function ProfilePage() {
 	};
 
 	return (
-		<div className="bg-background min-h-screen">
+		<div className="bg-background my-4 min-h-screen">
 			{/* Main Profile Container */}
 			<div className="container mx-auto max-w-4xl">
 				{/* Mobile Action Buttons */}

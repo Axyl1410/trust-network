@@ -74,9 +74,9 @@ export default function HomePage() {
 			{/* Hero Section */}
 			<section className="relative flex w-full flex-col items-center justify-center overflow-hidden bg-white px-2 pt-16 pb-8">
 				{/* Decorative circles */}
-				<div className="absolute top-0 left-0 -z-10 h-72 w-72 -translate-x-1/3 -translate-y-1/3 rounded-full bg-yellow-100" />
-				<div className="absolute top-1/3 right-0 -z-10 h-60 w-60 translate-x-1/3 -translate-y-1/3 rounded-full bg-orange-100" />
-				<div className="absolute right-0 bottom-0 -z-10 h-96 w-96 translate-x-1/3 translate-y-1/3 rounded-full bg-green-100" />
+				<div className="absolute top-0 left-0 -z-10 h-72 w-72 -translate-x-1/3 -translate-y-1/3 rounded-full bg-yellow-200" />
+				<div className="absolute top-1/3 right-0 -z-10 h-60 w-60 translate-x-1/3 -translate-y-1/3 rounded-full bg-orange-200" />
+				<div className="absolute right-0 bottom-0 -z-10 h-96 w-96 translate-x-1/3 translate-y-1/3 rounded-full bg-green-200" />
 				<h1 className="mt-8 mb-4 text-center text-5xl font-extrabold text-gray-900 sm:text-6xl">
 					Find a company you can trust
 				</h1>

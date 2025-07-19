@@ -9,7 +9,7 @@ import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetCommentsByUser } from "@/service/read-function/get-comments-by-user";
 import { Comment, Company, FeedPost, ProfileUserData } from "@/types";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
 
 // Mock data cho feed posts
@@ -53,22 +53,42 @@ const mockFeedPosts: FeedPost[] = [
 ];
 
 interface ProfilePageProps {
-	params: {
+	params: Promise<{
 		address: string;
-	};
+	}>;
 }
 
 export default function DynamicProfilePage({ params }: ProfilePageProps) {
 	const router = useRouter();
 	const account = useActiveAccount();
-	const { address } = params;
+	const [decodedAddress, setDecodedAddress] = useState<string>("");
+	const [isLoading, setIsLoading] = useState(true);
 
-	// Decode the address from URL
-	const decodedAddress = decodeURIComponent(address);
+	// Handle async params
+	useEffect(() => {
+		const loadParams = async () => {
+			try {
+				const resolvedParams = await params;
+				const address = resolvedParams.address;
+				const decoded = decodeURIComponent(address);
+				setDecodedAddress(decoded);
+			} catch (error) {
+				console.error("Error loading params:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		loadParams();
+	}, [params]);
 
 	// Check if the logged-in user is viewing their own profile
 	useEffect(() => {
-		if (account?.address && account.address.toLowerCase() === decodedAddress.toLowerCase()) {
+		if (
+			account?.address &&
+			decodedAddress &&
+			account.address.toLowerCase() === decodedAddress.toLowerCase()
+		) {
 			router.replace("/profile");
 		}
 	}, [account?.address, decodedAddress, router]);
@@ -106,8 +126,20 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 		joinedDate: "Apr 2024",
 	};
 
+	// Show loading state
+	if (isLoading) {
+		return (
+			<div className="bg-background my-4 flex min-h-screen items-center justify-center">
+				<div className="text-center">
+					<div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+					<p className="text-muted-foreground">Loading profile...</p>
+				</div>
+			</div>
+		);
+	}
+
 	return (
-		<div className="bg-background min-h-screen">
+		<div className="bg-background my-4 min-h-screen">
 			{/* Main Profile Container */}
 			<div className="container mx-auto max-w-4xl">
 				{/* Mobile Action Buttons */}
