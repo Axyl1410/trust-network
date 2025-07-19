@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Web3Avatar } from "@/components/ui/web3-avatar";
 import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetCommentsByUser } from "@/service/read-function/get-comments-by-user";
 import { Comment, Company, FeedPost, ProfileUserData } from "@/types";
@@ -110,18 +111,19 @@ export default function ProfilePage() {
 					<div className="flex items-start justify-between">
 						{/* Profile Picture */}
 						<div className="relative -mt-14 ml-5 size-20 sm:-mt-24 sm:size-36">
-							<div className="ring-background flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-bold text-white ring-3 sm:size-36 sm:text-3xl dark:ring-black">
-								{account?.address ? account.address.slice(2, 4).toUpperCase() : "??"}
-							</div>
+							<Web3Avatar
+								address={account?.address || ""}
+								className="ring-background size-full ring-3"
+							/>
 						</div>
 
 						{/* Action Buttons */}
-						<div className="flex items-center gap-x-2">
+						<div className="mt-4 flex items-center gap-x-2">
 							<Button variant="outline" size="sm">
 								Follow
 							</Button>
 							<Button variant="outline" size="sm">
-								<svg className="mr-1 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+								<svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
 									<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
 								</svg>
 							</Button>
