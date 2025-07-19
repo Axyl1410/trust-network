@@ -11,6 +11,8 @@ contract CompanyCommentVoteV3 {
         address admin;
         uint createdAt;
         bool exists;
+        uint totalComments;
+        uint totalRating;
     }
 
     struct Comment {
@@ -23,6 +25,7 @@ contract CompanyCommentVoteV3 {
         uint downvotes;
         bool hidden;
         uint reportCount;
+        uint rating;
     }
 
     uint public companyCount;
@@ -36,12 +39,18 @@ contract CompanyCommentVoteV3 {
     mapping(uint => mapping(address => bool)) public hasVoted;
     mapping(uint => mapping(address => bool)) public hasReported;
     mapping(address => int) public reputation;
-    
+
     // Thêm mapping lưu các commentId theo address
     mapping(address => uint[]) public userComments;
 
     event CompanyCreated(uint id, string name, address admin);
-    event CommentCreated(uint companyId, uint commentId, address author, string content);
+    event CommentCreated(
+        uint companyId,
+        uint commentId,
+        address author,
+        string content,
+        uint rating
+    );
     event Voted(uint commentId, address voter, bool isUpvote);
     event CommentReported(uint commentId, address reporter);
     event CommentHidden(uint commentId, address admin);
@@ -61,13 +70,15 @@ contract CompanyCommentVoteV3 {
     }
 
     // Helper: extract domain from website URL
-    function _extractDomain(string memory website) internal pure returns (string memory) {
+    function _extractDomain(
+        string memory website
+    ) internal pure returns (string memory) {
         bytes memory b = bytes(website);
         uint start = 0;
         // Skip "http://" or "https://"
-        if (b.length > 7 && b[0] == 'h' && b[1] == 't' && b[2] == 't') {
+        if (b.length > 7 && b[0] == "h" && b[1] == "t" && b[2] == "t") {
             for (uint i = 0; i < b.length - 2; i++) {
-                if (b[i] == '/' && b[i+1] == '/') {
+                if (b[i] == "/" && b[i + 1] == "/") {
                     start = i + 2;
                     break;
                 }
@@ -76,7 +87,7 @@ contract CompanyCommentVoteV3 {
         // Get domain part
         uint end = b.length;
         for (uint i = start; i < b.length; i++) {
-            if (b[i] == '/' || b[i] == ':') {
+            if (b[i] == "/" || b[i] == ":") {
                 end = i;
                 break;
             }
@@ -89,7 +100,9 @@ contract CompanyCommentVoteV3 {
     }
 
     // Search company by name or website domain (case-insensitive)
-    function findCompany(string memory keyword) public view returns (uint, string memory, bool) {
+    function findCompany(
+        string memory keyword
+    ) public view returns (uint, string memory, bool) {
         string memory lower = _toLower(keyword);
         uint id = companyNameToId[lower];
         if (id != 0) {
@@ -125,7 +138,9 @@ contract CompanyCommentVoteV3 {
             website,
             msg.sender,
             block.timestamp,
-            true
+            true,
+            0,
+            0
         );
         companyNameToId[lowerName] = companyCount;
         companyDomainToId[domain] = companyCount;
@@ -134,8 +149,13 @@ contract CompanyCommentVoteV3 {
     }
 
     // Create comment in a company
-    function createComment(uint companyId, string memory content) public returns (uint) {
+    function createComment(
+        uint companyId,
+        string memory content,
+        uint rating
+    ) public returns (uint) {
         require(companies[companyId].exists, "Company does not exist");
+        require(rating >= 1 && rating <= 5, "Rating must be between 1 and 5");
         commentCount++;
         comments[commentCount] = Comment(
             commentCount,
@@ -146,12 +166,24 @@ contract CompanyCommentVoteV3 {
             0,
             0,
             false,
-            0
+            0,
+            rating
         );
         companyComments[companyId].push(commentCount);
         // Lưu commentId vào mapping userComments
         userComments[msg.sender].push(commentCount);
-        emit CommentCreated(companyId, commentCount, msg.sender, content);
+
+        // Cập nhật thống kê của công ty
+        companies[companyId].totalComments += 1;
+        companies[companyId].totalRating += rating;
+
+        emit CommentCreated(
+            companyId,
+            commentCount,
+            msg.sender,
+            content,
+            rating
+        );
         return commentCount;
     }
 
@@ -201,45 +233,87 @@ contract CompanyCommentVoteV3 {
             if (companyId != 0) break;
         }
         require(companyId != 0, "Company not found");
-        require(msg.sender == companies[companyId].admin, "Only admin can hide");
+        require(
+            msg.sender == companies[companyId].admin,
+            "Only admin can hide"
+        );
         c.hidden = true;
         emit CommentHidden(commentId, msg.sender);
     }
 
     // Get all comment IDs for a company
-    function getCompanyComments(uint companyId) public view returns (uint[] memory) {
+    function getCompanyComments(
+        uint companyId
+    ) public view returns (uint[] memory) {
         return companyComments[companyId];
-    }   
+    }
 
     // Get comment details
-    function getComment(uint commentId) public view returns (
-        uint id,
-        address author,
-        string memory content,
-        uint createdAt,
-        int votes,
-        uint upvotes,
-        uint downvotes,
-        bool hidden,
-        uint reportCount
-    ) {
+    function getComment(
+        uint commentId
+    )
+        public
+        view
+        returns (
+            uint id,
+            address author,
+            string memory content,
+            uint createdAt,
+            int votes,
+            uint upvotes,
+            uint downvotes,
+            bool hidden,
+            uint reportCount,
+            uint rating
+        )
+    {
         Comment memory c = comments[commentId];
-        return (c.id, c.author, c.content, c.createdAt, c.votes, c.upvotes, c.downvotes, c.hidden, c.reportCount);
+        return (
+            c.id,
+            c.author,
+            c.content,
+            c.createdAt,
+            c.votes,
+            c.upvotes,
+            c.downvotes,
+            c.hidden,
+            c.reportCount,
+            c.rating
+        );
     }
 
     // Get company details
-    function getCompany(uint companyId) public view returns (
-        uint id,
-        string memory name,
-        string memory description,
-        string memory location,
-        string memory website,
-        address admin,
-        uint createdAt,
-        bool exists
-    ) {
+    function getCompany(
+        uint companyId
+    )
+        public
+        view
+        returns (
+            uint id,
+            string memory name,
+            string memory description,
+            string memory location,
+            string memory website,
+            address admin,
+            uint createdAt,
+            bool exists,
+            uint totalComments,
+            uint totalRating
+        )
+    {
         Company memory c = companies[companyId];
-        return (c.id, c.name, c.description, c.location, c.website, c.admin, c.createdAt, c.exists);
+        return (
+            c.id,
+            c.name,
+            c.description,
+            c.location,
+            c.website,
+            c.admin,
+            c.createdAt,
+            c.exists,
+            c.totalComments,
+            c.totalRating
+        );
     }
 
     // Get reputation
@@ -257,7 +331,9 @@ contract CompanyCommentVoteV3 {
     }
 
     // Get all comment details of a company
-    function getAllCommentsOfCompany(uint companyId) public view returns (Comment[] memory) {
+    function getAllCommentsOfCompany(
+        uint companyId
+    ) public view returns (Comment[] memory) {
         uint[] memory ids = companyComments[companyId];
         Comment[] memory result = new Comment[](ids.length);
         for (uint i = 0; i < ids.length; i++) {
@@ -266,8 +342,35 @@ contract CompanyCommentVoteV3 {
         return result;
     }
 
+    // Tính trung bình rating của công ty
+    function getAverageRating(uint companyId) public view returns (uint) {
+        Company memory c = companies[companyId];
+        if (c.totalComments == 0) {
+            return 0;
+        }
+        return c.totalRating / c.totalComments;
+    }
+
+    // Lấy thống kê rating của công ty
+    function getCompanyRatingStats(
+        uint companyId
+    )
+        public
+        view
+        returns (uint totalComments, uint totalRating, uint averageRating)
+    {
+        Company memory c = companies[companyId];
+        uint avg = 0;
+        if (c.totalComments > 0) {
+            avg = c.totalRating / c.totalComments;
+        }
+        return (c.totalComments, c.totalRating, avg);
+    }
+
     // Lấy tất cả comment của một user theo address
-    function getCommentsByUser(address user) public view returns (Comment[] memory) {
+    function getCommentsByUser(
+        address user
+    ) public view returns (Comment[] memory) {
         uint[] memory ids = userComments[user];
         Comment[] memory result = new Comment[](ids.length);
         for (uint i = 0; i < ids.length; i++) {
@@ -275,4 +378,4 @@ contract CompanyCommentVoteV3 {
         }
         return result;
     }
-} 
+}
