@@ -7,7 +7,7 @@ export function useGetAllCommentsOfCompany(companyId: bigint) {
 	const res = useReadContract({
 		contract,
 		method:
-			"function getAllCommentsOfCompany(uint256 companyId) view returns ((uint256 id, address author, string content, uint256 createdAt, int256 votes, uint256 upvotes, uint256 downvotes, bool hidden, uint256 reportCount)[])",
+			"function getAllCommentsOfCompany(uint256 companyId) view returns ((uint256 id, address author, string content, uint256 createdAt, int256 votes, uint256 upvotes, uint256 downvotes, bool hidden, uint256 reportCount, uint256 rating, uint256 companyId)[])",
 		params: [companyId],
 	});
 

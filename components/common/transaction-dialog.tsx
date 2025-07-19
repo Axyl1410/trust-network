@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import loadingAnimation from "@/public/loader.json";
+import { TransactionDialogProps, TransactionStep } from "@/types";
 import Lottie from "lottie-react";
 import { CheckCircle, XCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -15,16 +16,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "../ui/dialog";
-
-export type TransactionStep = "sent" | "confirmed" | "success" | "error";
-
-interface TransactionDialogProps {
-	isOpen: boolean;
-	onOpenChange: (open: boolean) => void;
-	currentStep: TransactionStep;
-	title: string;
-	message: string;
-}
 
 const StepIcon = ({ step }: { step: TransactionStep }) => {
 	switch (step) {

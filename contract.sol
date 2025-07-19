@@ -26,6 +26,7 @@ contract CompanyCommentVoteV3 {
         bool hidden;
         uint reportCount;
         uint rating;
+        uint companyId;
     }
 
     uint public companyCount;
@@ -167,7 +168,8 @@ contract CompanyCommentVoteV3 {
             0,
             false,
             0,
-            rating
+            rating,
+            companyId
         );
         companyComments[companyId].push(commentCount);
         // Lưu commentId vào mapping userComments
@@ -264,7 +266,8 @@ contract CompanyCommentVoteV3 {
             uint downvotes,
             bool hidden,
             uint reportCount,
-            uint rating
+            uint rating,
+            uint companyId
         )
     {
         Comment memory c = comments[commentId];
@@ -278,7 +281,8 @@ contract CompanyCommentVoteV3 {
             c.downvotes,
             c.hidden,
             c.reportCount,
-            c.rating
+            c.rating,
+            c.companyId
         );
     }
 

@@ -1,18 +1,18 @@
 import TransactionDialog from "@/components/common/transaction-dialog";
 import { Button } from "@/components/ui/button";
 import { Contract } from "@/constant/contract";
-import { CreateCompanyProps, TransactionStep } from "@/types";
+import { Flag } from "lucide-react";
 import { useState } from "react";
 import { prepareContractCall } from "thirdweb";
 import { TransactionButton } from "thirdweb/react";
 import getThirdwebContract from "../get-contract";
+import { TransactionStep } from "@/types";
 
-export default function CreateCompany({
-	name,
-	description,
-	location,
-	website,
-}: CreateCompanyProps) {
+interface ReportCommentProps {
+	commentId: bigint;
+}
+
+export default function ReportComment({ commentId }: ReportCommentProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [currentStep, setCurrentStep] = useState<TransactionStep>("sent");
 	const [message, setMessage] = useState("");
@@ -24,15 +24,14 @@ export default function CreateCompany({
 
 	return (
 		<>
-			<Button className="relative" asChild>
+			<Button className="relative" variant="ghost" size="sm" asChild>
 				<TransactionButton
 					unstyled
 					transaction={async () => {
 						const transaction = prepareContractCall({
 							contract,
-							method:
-								"function createCompany(string name, string description, string location, string website) returns (uint256)",
-							params: [name, description, location, website],
+							method: "function reportComment(uint256 commentId)",
+							params: [commentId],
 						});
 
 						setIsOpen(true);
@@ -44,21 +43,21 @@ export default function CreateCompany({
 					}}
 					onTransactionConfirmed={() => {
 						setCurrentStep("success");
-						setMessage("Transaction is being confirmed...");
+						setMessage("Comment reported successfully!");
 					}}
 					onError={(error) => {
 						setCurrentStep("error");
-						setMessage("Transaction failed: " + error.message);
+						setMessage("Failed to report comment: " + error.message);
 					}}
 				>
-					Create Company
+					<Flag className="h-4 w-4" />
 				</TransactionButton>
 			</Button>
 			<TransactionDialog
 				isOpen={isOpen}
 				onOpenChange={handleOpenChange}
 				currentStep={currentStep}
-				title="Transaction Status"
+				title="Report Comment"
 				message={message}
 			/>
 		</>
