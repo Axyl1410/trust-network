@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract CompanyCommentVoteV3 {
+contract CompanyCommentVoteV4 {
     struct Company {
         uint id;
         string name;
@@ -196,13 +196,19 @@ contract CompanyCommentVoteV3 {
         Comment storage c = comments[commentId];
         require(!c.hidden, "Comment is hidden");
         hasVoted[commentId][msg.sender] = true;
+
+        int previousVotes = c.votes;
+
         if (isUpvote) {
             c.votes += 1;
             c.upvotes += 1;
         } else {
             c.votes -= 1;
             c.downvotes += 1;
-            reputation[c.author] -= 1;
+            // Only subtract reputation if the total votes become negative
+            if (previousVotes >= 0 && c.votes < 0) {
+                reputation[c.author] -= 1;
+            }
         }
         emit Voted(commentId, msg.sender, isUpvote);
     }
