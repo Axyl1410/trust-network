@@ -36,18 +36,6 @@ export interface ProfileUserData {
 	joinedDate: string;
 }
 
-export interface FeedPost {
-	id: number;
-	title: string;
-	content: string;
-	date: string;
-	readTime: string;
-	tags: string[];
-	likes: number;
-	comments: number;
-	shares: number;
-}
-
 // Transaction Dialog Types
 export type TransactionStep = "sent" | "confirmed" | "success" | "error";
 
