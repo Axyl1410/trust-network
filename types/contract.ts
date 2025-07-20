@@ -96,3 +96,9 @@ export interface CommentHiddenEvent {
 	commentId: bigint;
 	admin: string;
 }
+
+export interface StatusUpdatedEvent {
+	user: string;
+	newStatus: string;
+	timestamp: bigint;
+}

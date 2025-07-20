@@ -1,12 +1,17 @@
+import { thirdwebClient } from "@/lib/thirdweb";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { ConnectButton } from "thirdweb/react";
 import { WalletConnectButton } from "../common/wallet-button";
 
 export default function NavHeader() {
 	const [open, setOpen] = useState(false);
 	return (
 		<header className="flex h-16 w-full items-center border-b bg-white px-0 py-2">
+			<div className="sr-only">
+				<ConnectButton client={thirdwebClient} />
+			</div>
 			<div className="mx-auto flex h-16 w-full max-w-6xl items-center px-4 sm:px-8">
 				{/* Logo trái */}
 				<Link
@@ -38,10 +43,10 @@ export default function NavHeader() {
 						Blog
 					</Link>
 					<Link
-						href="/login"
+						href="/shop"
 						className="text-sm font-medium text-gray-700 transition hover:text-blue-600"
 					>
-						Log in
+						Shop
 					</Link>
 				</nav>
 

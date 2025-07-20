@@ -1,14 +1,17 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { FeedPostComponent } from "@/components/common/feed-post";
+import { StatusUpdateForm } from "@/components/common/status-update-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Web3Avatar } from "@/components/ui/web3-avatar";
+import { useFeedPosts } from "@/service/event-function/status-update";
 import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetCommentsByUser } from "@/service/read-function/get-comments-by-user";
-import { Comment, Company, FeedPost, ProfileUserData } from "@/types";
+import { Comment, Company, ProfileUserData } from "@/types";
+import { FeedPost } from "@/types/common";
 import {
 	formatCommentDate,
 	formatCompanyName,
@@ -17,43 +20,27 @@ import {
 } from "@/utils/format";
 import { useActiveAccount } from "thirdweb/react";
 
-// Mock data cho feed posts
+// Mock data for feed posts (fallback when no real posts exist)
 const mockFeedPosts: FeedPost[] = [
 	{
-		id: 1,
-		title: "Getting Started with Web3 Development",
+		id: "mock-1",
+		user: "0x2349Db8bdf85bd80bFc4afb715a69fb4C6463B96",
 		content:
-			"Web3 development is revolutionizing how we build applications. In this post, I'll share my journey and some key insights...",
-		date: "2024-01-15",
-		readTime: "5 min read",
-		tags: ["Web3", "Development", "Blockchain"],
+			"Getting Started with Web3 Development - Web3 development is revolutionizing how we build applications. In this post, I'll share my journey and some key insights...",
+		timestamp: BigInt(Math.floor(Date.now() / 1000) - 3600), // 1 hour ago
 		likes: 42,
 		comments: 8,
 		shares: 3,
 	},
 	{
-		id: 2,
-		title: "Understanding Smart Contracts",
+		id: "mock-2",
+		user: "0x2349Db8bdf85bd80bFc4afb715a69fb4C6463B96",
 		content:
-			"Smart contracts are self-executing contracts with the terms of the agreement directly written into code...",
-		date: "2024-01-10",
-		readTime: "8 min read",
-		tags: ["Smart Contracts", "Solidity", "Ethereum"],
+			"Understanding Smart Contracts - Smart contracts are self-executing contracts with the terms of the agreement directly written into code...",
+		timestamp: BigInt(Math.floor(Date.now() / 1000) - 7200), // 2 hours ago
 		likes: 67,
 		comments: 12,
 		shares: 5,
-	},
-	{
-		id: 3,
-		title: "DeFi Protocols: A Comprehensive Guide",
-		content:
-			"Decentralized Finance (DeFi) has emerged as one of the most exciting applications of blockchain technology...",
-		date: "2024-01-05",
-		readTime: "12 min read",
-		tags: ["DeFi", "Finance", "Cryptocurrency"],
-		likes: 89,
-		comments: 15,
-		shares: 7,
 	},
 ];
 
@@ -61,6 +48,7 @@ export default function ProfilePage() {
 	const account = useActiveAccount();
 	const { data: comments } = useGetCommentsByUser(account?.address || "");
 	const { data: companies } = useGetAllCompanies();
+	const { data: feedPosts, isLoading: feedLoading } = useFeedPosts(account?.address || "");
 
 	// Tìm tên công ty theo companyId
 	const getCompanyName = (companyId: bigint): string => {
@@ -223,39 +211,24 @@ export default function ProfilePage() {
 
 						{/* Feed Tab */}
 						<TabsContent value="feed" className="mt-6 px-5 md:px-0">
+							{/* Status Update Form */}
+							<StatusUpdateForm />
+
 							<div className="space-y-6">
-								{mockFeedPosts.map((post) => (
-									<Card key={post.id} className="border-0 shadow-none">
-										<CardContent className="p-0">
-											<div className="space-y-3">
-												<div className="flex items-start justify-between">
-													<div>
-														<h3 className="mb-1 text-lg font-semibold">{post.title}</h3>
-														<p className="text-muted-foreground text-sm">
-															{post.date} • {post.readTime}
-														</p>
-													</div>
-												</div>
-												<p className="text-foreground">{post.content}</p>
-												<div className="flex gap-2">
-													{post.tags.map((tag) => (
-														<Badge key={tag} variant="secondary" className="text-xs">
-															{tag}
-														</Badge>
-													))}
-												</div>
-												<Separator className="my-3" />
-												<div className="text-muted-foreground flex items-center justify-between text-sm">
-													<div className="flex gap-4">
-														<span>❤️ {post.likes}</span>
-														<span>💬 {post.comments}</span>
-														<span>📤 {post.shares}</span>
-													</div>
-												</div>
-											</div>
-										</CardContent>
-									</Card>
-								))}
+								{feedLoading ? (
+									<div className="py-8 text-center">
+										<div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+										<p className="text-muted-foreground">Loading feed...</p>
+									</div>
+								) : feedPosts && feedPosts.length > 0 ? (
+									feedPosts.reverse().map((post) => <FeedPostComponent key={post.id} post={post} />)
+								) : (
+									<div className="space-y-6">
+										{mockFeedPosts.map((post) => (
+											<FeedPostComponent key={post.id} post={post} />
+										))}
+									</div>
+								)}
 							</div>
 						</TabsContent>
 

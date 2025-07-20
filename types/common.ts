@@ -16,7 +16,7 @@ export interface WalletInfo {
 export interface ContractError {
 	code: string;
 	message: string;
-	details?: any;
+	details?: unknown;
 }
 
 // Loading States
@@ -32,4 +32,15 @@ export interface NavigationItem {
 	href: string;
 	icon?: React.ComponentType<{ className?: string }>;
 	children?: NavigationItem[];
+}
+
+// Feed Post Types
+export interface FeedPost {
+	id: string;
+	user: string;
+	content: string;
+	timestamp: bigint;
+	likes: number;
+	comments: number;
+	shares: number;
 }

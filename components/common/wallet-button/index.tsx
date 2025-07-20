@@ -1,6 +1,6 @@
 "use client";
 
-import { FORMA_SKETCHPAD } from "@/constant/chain";
+import { SEPOLIA } from "@/constant/chain";
 import { thirdwebClient } from "@/lib/thirdweb";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -56,7 +56,7 @@ const WalletConnectButtonComponent = () => {
 	const handleConnect = useCallback(async () => {
 		await connect({
 			client: thirdwebClient,
-			chain: FORMA_SKETCHPAD,
+			chain: SEPOLIA,
 			showThirdwebBranding: false,
 			theme: "light",
 			size: "compact",
@@ -67,7 +67,7 @@ const WalletConnectButtonComponent = () => {
 	const handleDetail = useCallback(async () => {
 		detailsModal.open({
 			client: thirdwebClient,
-			chains: [FORMA_SKETCHPAD],
+			chains: [SEPOLIA],
 			theme: "light",
 			hideSwitchWallet: true,
 			hideDisconnect: true,
@@ -89,7 +89,7 @@ const WalletConnectButtonComponent = () => {
 	const handleSwitch = useCallback(async () => {
 		if (wallet?.switchChain) {
 			try {
-				await wallet.switchChain(FORMA_SKETCHPAD);
+				await wallet.switchChain(SEPOLIA);
 			} catch (error) {
 				console.log(error);
 				toast.error("Failed to switch chain. Please ensure your wallet supports this network.");
@@ -105,7 +105,7 @@ const WalletConnectButtonComponent = () => {
 		<>
 			{!account?.address ? (
 				<ConnectButton onClick={handleConnect} />
-			) : activeChain?.id !== FORMA_SKETCHPAD.id ? (
+			) : activeChain?.id !== SEPOLIA.id ? (
 				<SwitchNetworkButton onClick={handleSwitch} />
 			) : (
 				<AccountButton address={account.address} onClick={handleDetail} />

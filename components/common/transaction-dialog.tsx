@@ -27,7 +27,11 @@ const StepIcon = ({ step }: { step: TransactionStep }) => {
 				</div>
 			);
 		case "success":
-			return <CheckCircle className="h-8 w-8 text-green-500" />;
+			return (
+				<div className="flex h-18 w-18 items-center justify-center">
+					<CheckCircle className="h-8 w-8 text-green-500" />
+				</div>
+			);
 		case "error":
 			return <XCircle className="h-8 w-8 text-red-500" />;
 	}
