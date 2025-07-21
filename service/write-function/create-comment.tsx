@@ -55,7 +55,7 @@ export default function CreateComment({
 						setMessage("Transaction failed: " + error.message);
 					}}
 				>
-					Create Comment
+					Create review
 				</TransactionButton>
 			</Button>
 			<TransactionDialog
