@@ -197,18 +197,12 @@ contract CompanyCommentVoteV4 {
         require(!c.hidden, "Comment is hidden");
         hasVoted[commentId][msg.sender] = true;
 
-        int previousVotes = c.votes;
-
         if (isUpvote) {
             c.votes += 1;
             c.upvotes += 1;
         } else {
             c.votes -= 1;
             c.downvotes += 1;
-            // Only subtract reputation if the total votes become negative
-            if (previousVotes >= 0 && c.votes < 0) {
-                reputation[c.author] -= 1;
-            }
         }
         emit Voted(commentId, msg.sender, isUpvote);
     }
@@ -326,9 +320,27 @@ contract CompanyCommentVoteV4 {
         );
     }
 
-    // Get reputation
+    // Calculate reputation based on comment vote totals
+    function calculateReputation(address user) public view returns (int) {
+        uint[] memory userCommentIds = userComments[user];
+        int totalReputation = 0;
+
+        for (uint i = 0; i < userCommentIds.length; i++) {
+            Comment memory comment = comments[userCommentIds[i]];
+            if (comment.votes > 0) {
+                totalReputation += 1; // Positive votes = +1 reputation
+            } else if (comment.votes < 0) {
+                totalReputation -= 1; // Negative votes = -1 reputation
+            }
+            // If votes = 0, no reputation change
+        }
+
+        return totalReputation;
+    }
+
+    // Get reputation (now calculated dynamically)
     function getReputation(address user) public view returns (int) {
-        return reputation[user];
+        return calculateReputation(user);
     }
 
     // Get all companies
