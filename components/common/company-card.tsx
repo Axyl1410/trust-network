@@ -43,11 +43,11 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
       <div className="flex gap-2 mt-3">
         <Link href={`/review?id=${company.id}`}
           className="flex-1 px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-800 transition text-center text-sm font-medium shadow">
-          Xem đánh giá
+         View reviews
         </Link>
         <Link href={`/review?id=${company.id}&write=1`}
           className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition text-center text-sm font-medium shadow">
-          Viết đánh giá
+         Write review
         </Link>
       </div>
     </div>

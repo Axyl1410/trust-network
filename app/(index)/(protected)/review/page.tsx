@@ -1,8 +1,7 @@
 "use client";
-import { thirdwebClient } from "@/lib/thirdweb";
+
 import { useState } from "react";
 import { useActiveAccount, useConnectModal } from "thirdweb/react";
-<<<<<<< HEAD
 import { thirdwebClient } from "@/lib/thirdweb";
 import {
   Search,
@@ -24,8 +23,6 @@ import { useGetAllCommentsOfCompany } from "@/service/read-function/get-all-comm
 import CreateComment from "@/service/write-function/create-comment";
 import { UpvoteButton, DownvoteButton } from "@/service/write-function/vote";
 import { useEffect } from "react";
-=======
->>>>>>> origin/dev
 
 // Define proper types for the data structures
 interface CompanyInfo {
@@ -47,7 +44,6 @@ interface FormData {
 }
 
 export default function ReviewPage() {
-<<<<<<< HEAD
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -105,27 +101,6 @@ export default function ReviewPage() {
     setResults([]); // simulate not found
     setStep("search");
   };
-=======
-	const [search, setSearch] = useState("");
-	const [results, setResults] = useState<SearchResult[]>([]);
-	const [form, setForm] = useState<FormData>({ name: "", link: "", address: "" });
-	const [checking, setChecking] = useState(false);
-	const [checkResult, setCheckResult] = useState<null | "found" | "notfound">(null);
-	const [review, setReview] = useState("");
-	const [step, setStep] = useState<"search" | "create" | "review">("search");
-	const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
-
-	const account = useActiveAccount();
-	const { connect } = useConnectModal();
-
-	// Simulate search
-	const handleSearch = (e: React.FormEvent) => {
-		e.preventDefault();
-		// TODO: call API search company
-		setResults([]); // simulate not found
-		setStep("search");
-	};
->>>>>>> origin/dev
 
 	// Check website/Google Maps link
 	const handleCheckLink = async () => {
@@ -162,7 +137,6 @@ export default function ReviewPage() {
 		setChecking(false);
 	};
 
-<<<<<<< HEAD
   // Handle create company
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,13 +150,6 @@ export default function ReviewPage() {
     setCheckResult(null);
     setCompanyInfo(null);
   };
-=======
-	// Handle create company
-	const handleCreate = (e: React.FormEvent) => {
-		e.preventDefault();
-		setStep("review");
-	};
->>>>>>> origin/dev
 
 	// Handle submit review
 	const handleSubmitReview = (e: React.FormEvent) => {
@@ -203,23 +170,24 @@ export default function ReviewPage() {
 		setStep("create");
 	};
 
-<<<<<<< HEAD
   const handleSelectCompany = (company: any) => {
     setSelectedCompany(company);
     setStep("review");
   };
 
   if (!companyIdBigInt) {
-    return <div className="text-center py-8 text-gray-500">Vui lòng chọn một công ty để xem chi tiết.</div>;
+    return <div className="text-center py-8 text-gray-500">Please select a company to see the details.</div>;
   }
   if (isCompanyLoading) {
-    return <div className="text-center py-8">Đang tải thông tin công ty...</div>;
+    return <div className="text-center py-8">Loading company information...</div>;
   }
   if (!queriedCompanyInfo) {
-    return <div className="text-center py-8 text-red-500">Không tìm thấy thông tin công ty.</div>;
+    return <div className="text-center py-8 text-red-500">Company information not found.</div>;
   }
   if (companyIdBigInt && writeMode) {
     const [id, name, description, location, website, admin] = queriedCompanyInfo || [];
+    const hasReviewed = account && Array.isArray(reviews) && reviews.some((review: any) => review.author.toLowerCase() === account.address.toLowerCase());
+
     return (
       <div className="max-w-2xl mx-auto py-8">
         <div className="mb-6 border rounded-xl p-6 bg-white shadow">
@@ -230,9 +198,15 @@ export default function ReviewPage() {
         </div>
         <div className="mt-8 border rounded-xl p-6 bg-gray-50 shadow-md">
           <h2 className="font-bold mb-2 text-xl flex items-center gap-2">
-            <PenLine className="text-blue-600" /> Viết đánh giá cho <span className="text-blue-700">{name}</span>
+            <PenLine className="text-blue-600" /> Write a review for <span className="text-blue-700">{name}</span>
           </h2>
-          <ReviewForm companyId={companyIdBigInt} />
+          {hasReviewed ? (
+            <div className="text-center text-gray-600 py-4">
+              <p>You have already reviewed this company.</p>
+            </div>
+          ) : (
+            <ReviewForm companyId={companyIdBigInt} />
+          )}
         </div>
       </div>
     );
@@ -316,19 +290,19 @@ export default function ReviewPage() {
             ) : summary ? (
               <p>{summary}</p>
             ) : (
-              <span className="italic text-gray-500">(No summary available)</span>
+              <span className="italic text-gray-500">(Summary will be displayed here)</span>
             )}
           </div>
         </div>
       </div>
       {/* Danh sách review */}
       <div id="reviews" className="mb-8">
-        <h2 className="font-bold text-lg mb-2">Đánh giá về công ty này</h2>
+        <h2 className="font-bold text-lg mb-2">Reviews about this company</h2>
         {Array.isArray(reviews) && reviews.length > 0 ? (
           <div className="space-y-4">
             {reviews.map((review: any) => {
-              const content = review?.content || "(Không có nội dung)";
-              const author = review?.author ? `${review.author.slice(0, 8)}...${review.author.slice(-4)}` : "Ẩn danh";
+              const content = review?.content || "(No content)";
+              const author = review?.author ? `${review.author.slice(0, 8)}...${review.author.slice(-4)}` : "Anonymous";
               const createdAt = review?.createdAt ? new Date(Number(review.createdAt) * 1000).toLocaleDateString() : null;
               const votes = typeof review?.votes !== 'undefined' ? review.votes : 0;
               let commentId;
@@ -337,8 +311,8 @@ export default function ReviewPage() {
                 <div key={review.id} className="border rounded p-4 bg-gray-50">
                   <div className="text-sm text-gray-700 mb-1">{content}</div>
                   <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
-                    <span>Tác giả: {author}</span>
-                    {createdAt && <span>Ngày: {createdAt}</span>}
+                    <span>Author: {author}</span>
+                    {createdAt && <span>Date: {createdAt}</span>}
                     <span className="flex items-center gap-1">
                       <span className="text-gray-700 font-semibold mr-1">{votes}</span>
                       {commentId !== undefined && <UpvoteButton commentId={commentId} />}
@@ -350,7 +324,7 @@ export default function ReviewPage() {
             })}
           </div>
         ) : (
-          <div className="text-gray-500">Chưa có đánh giá nào cho công ty này.</div>
+          <div className="text-gray-500">There are no reviews for this company yet.</div>
         )}
       </div>
     </div>
@@ -359,13 +333,15 @@ export default function ReviewPage() {
 
 function ReviewForm({ companyId }: { companyId: bigint }) {
   const [content, setContent] = useState("");
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState<bigint>(BigInt(5));
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-   
+   router.replace(`http://localhost:3000/review?id=${companyId}`)
   };
+
+ 
 
   return (
     <form onSubmit={handleSubmit}>
@@ -376,7 +352,7 @@ function ReviewForm({ companyId }: { companyId: bigint }) {
               <button
                 key={star}
                 type="button"
-                onClick={() => setRating(star)}
+                onClick={() => setRating(BigInt(star))}
                 className={`text-3xl ${rating >= star ? 'text-green-600' : 'text-gray-300'}`}
               >
                 ★
@@ -392,149 +368,8 @@ function ReviewForm({ companyId }: { companyId: bigint }) {
         required
       />
       <div className="mt-3">
-        <CreateComment companyId={companyId} content={content} rating={rating} />
+        <CreateComment companyId={companyId} content={content} rating={rating}  />
       </div>
     </form>
   );
 } 
-=======
-	return (
-		<div className="mx-auto max-w-xl py-8">
-			<div className="mb-8 text-center">
-				<h1 className="mb-2 flex items-center justify-center gap-2 text-3xl font-extrabold text-gray-900">
-					<span>📝</span> Write a Review
-				</h1>
-				<p className="text-gray-500">Search for a company or create a new one to review.</p>
-			</div>
-			{step === "search" && (
-				<>
-					<form onSubmit={handleSearch} className="mb-4 flex gap-2">
-						<input
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder="Search company or category"
-							className="flex-1 rounded-lg border px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200"
-						/>
-						<button
-							type="submit"
-							className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow transition hover:bg-blue-700"
-						>
-							Search
-						</button>
-					</form>
-
-					{results.length === 0 && (
-						<div className="my-6 rounded-lg border bg-white p-6 text-center shadow-sm">
-							<p className="mb-2 text-gray-700">
-								No company found. Would you like to create one to review?
-							</p>
-							<button
-								className="mt-3 rounded-lg bg-green-600 px-5 py-2 font-semibold text-white shadow transition hover:bg-green-700"
-								onClick={handleCreateClick}
-								type="button"
-							>
-								<span className="mr-2">➕</span> Create company to review
-							</button>
-						</div>
-					)}
-				</>
-			)}
-
-			{step === "create" && (
-				<div className="mt-8 rounded-xl border bg-gray-50 p-6 shadow-md">
-					<h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
-						<span>🏢</span> Create a new company
-					</h2>
-					<form onSubmit={handleCreate}>
-						<div className="mb-3">
-							<label className="mb-1 block font-medium">Company name</label>
-							<input
-								value={form.name}
-								onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-								className="w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200"
-								required
-							/>
-						</div>
-						<div className="mb-3">
-							<label className="mb-1 block font-medium">Website or Google Maps link</label>
-							<input
-								value={form.link}
-								onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))}
-								className="w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200"
-								required
-								onBlur={handleCheckLink}
-							/>
-							{checking && (
-								<div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-									<span className="animate-spin">⏳</span> Checking...
-								</div>
-							)}
-							{checkResult === "found" && (
-								<div className="mt-1 flex items-center gap-1 text-xs text-green-600">
-									<span>✔️</span> Đã xác thực trên Google/website.
-								</div>
-							)}
-							{companyInfo && (
-								<div className="mt-2 rounded border bg-white p-2 text-xs">
-									<div className="font-bold">{companyInfo.title}</div>
-									<div className="mb-1">{companyInfo.snippet}</div>
-									<a
-										href={companyInfo.link}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="text-blue-600 underline"
-									>
-										{companyInfo.link}
-									</a>
-									{companyInfo.link.includes("google.com/maps") && (
-										<div className="mt-1">
-											<span className="font-semibold">Địa chỉ:</span> {form.address}
-										</div>
-									)}
-								</div>
-							)}
-							{checkResult === "notfound" && (
-								<div className="mt-1 flex items-center gap-1 text-xs text-red-600">
-									<span>❌</span> Not found. Please be careful when creating a new company.
-								</div>
-							)}
-						</div>
-						<div className="mb-3">
-							<label className="mb-1 block font-medium">Địa chỉ</label>
-							<input
-								value={form.address}
-								onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-								className="w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200"
-								placeholder="Địa chỉ doanh nghiệp"
-							/>
-						</div>
-						<button className="mt-3 rounded-lg bg-blue-700 px-5 py-2 font-semibold text-white shadow transition hover:bg-blue-800">
-							Create & Write review
-						</button>
-					</form>
-				</div>
-			)}
-
-			{step === "review" && (
-				<div className="mt-8 rounded-xl border bg-gray-50 p-6 shadow-md">
-					<h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
-						<span>✍️</span> Write a review for <span className="text-blue-700">{form.name}</span>
-					</h2>
-					<form onSubmit={handleSubmitReview}>
-						<textarea
-							value={review}
-							onChange={(e) => setReview(e.target.value)}
-							className="min-h-[100px] w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200"
-							placeholder="Share your experience..."
-							required
-						/>
-						<button className="mt-3 rounded-lg bg-green-700 px-5 py-2 font-semibold text-white shadow transition hover:bg-green-800">
-							Submit review
-						</button>
-					</form>
-				</div>
-			)}
-		</div>
-	);
-}
->>>>>>> origin/dev

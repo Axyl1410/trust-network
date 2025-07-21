@@ -1,14 +1,15 @@
 "use client";
 import { useState } from "react";
-import { Building2, Globe, MapPin, CheckCircle2, Loader2 } from "lucide-react";
+import { Building2, Globe, MapPin, CheckCircle2, Loader2, Sparkles, FileText } from "lucide-react";
 import CreateCompany from "@/service/write-function/create-company";
 
 export default function CreateCompanyPage() {
-  const [form, setForm] = useState({ name: "", link: "", address: "" });
+  const [form, setForm] = useState({ name: "", link: "", address: "", description: "" });
   const [checking, setChecking] = useState(false);
   const [checkResult, setCheckResult] = useState<null | "found" | "notfound">(null);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
-  const [showCreate, setShowCreate] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+
 
   // Hàm kiểm tra link
   const handleCheckLink = async () => {
@@ -42,16 +43,39 @@ export default function CreateCompanyPage() {
     setChecking(false);
   };
 
+  // const handleGenerateDescription = async () => {
+  //   if (!form.link) {
+  //     alert("Please provide a website link first.");
+  //     return;
+  //   }
+  //   setIsSummarizing(true);
+  //   try {
+  //     const res = await fetch('/api/summarize-url', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ url: form.link }),
+  //     });
+  //     if (res.ok) {
+  //       const data = await res.json();
+  //       setForm(f => ({ ...f, description: data.summary }));
+  //     } else {
+  //       alert("Failed to generate description. Please try again.");
+  //     }
+  //   } catch (e) {
+  //     alert("An error occurred while generating the description.");
+  //   }
+  //   setIsSummarizing(false);
+  // };
+
   // Khi submit form, show CreateCompany
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setShowCreate(true);
   };
 
   return (
     <div className="max-w-xl mx-auto py-8">
       <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-        <Building2 className="text-blue-600" /> Tạo công ty mới
+        <Building2 className="text-blue-600" /> Create a new company
       </h1>
       <form onSubmit={handleSubmit} className="border rounded-xl p-6 bg-gray-50 shadow-md">
         <div className="mb-3">
@@ -93,7 +117,7 @@ export default function CreateCompanyPage() {
           )}
         </div>
         <div className="mb-3">
-          <label className="block mb-1 font-medium">Tên công ty</label>
+          <label className="block mb-1 font-medium">Company name</label>
           <input
             value={form.name}
             onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -102,7 +126,35 @@ export default function CreateCompanyPage() {
           />
         </div>
         <div className="mb-3">
-          <label className="block mb-1 font-medium">Địa chỉ</label>
+          <label className="block mb-1 font-medium flex items-center gap-1">
+            <FileText size={16} /> Company description
+          </label>
+          <textarea
+            value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+            className="w-full border rounded-lg px-3 py-2 min-h-[120px] shadow-sm focus:ring-2 focus:ring-blue-200"
+            required
+            placeholder="Describe the company, its products, or services..."
+          />
+          <button
+            type="button"
+            // onClick={handleGenerateDescription}
+            disabled={isSummarizing || !form.link}
+            className="mt-2 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSummarizing ? (
+              <>
+                <Loader2 className="animate-spin" size={14} /> Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles size={14} /> Auto-generate description from website
+              </>
+            )}
+          </button>
+        </div>
+        <div className="mb-3">
+          <label className="block mb-1 font-medium">Address</label>
           <input
             value={form.address}
             onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
@@ -117,7 +169,7 @@ export default function CreateCompanyPage() {
       { (
         <CreateCompany
           name={form.name}
-          description={""}
+          description={form.description}
           location={form.address}
           website={form.link}
         />
