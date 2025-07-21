@@ -25,11 +25,18 @@ export default function HomePage() {
 	const [companyNameResults, setCompanyNameResults] = useState<any[]>([]);
 	const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
 
-  // KOC thực tế
-  const [koc, setKoc] = useState<{
-    mostActive: { address: string; count: number; reputation: number|null }[];
-    mostReputable: { address: string; reputation: number }[];
-  }>({ mostActive: [], mostReputable: [] });
+	// Bảng thống kê reviewer
+	const [reviewStats, setReviewStats] = useState<{
+		topReviewers: { address: string; count: number }[];
+		topReputation: { address: string; reputation: number }[];
+	}>({ topReviewers: [], topReputation: [] });
+	const [reputationMap, setReputationMap] = useState<Record<string, number>>({});
+
+	// KOC thực tế
+	const [koc, setKoc] = useState<{
+		mostActive: { address: string; count: number; reputation: number | null }[];
+		mostReputable: { address: string; reputation: number }[];
+	}>({ mostActive: [], mostReputable: [] });
 
 	// Hàm lấy thông tin công ty theo id từ allCompanies
 	const findCompanyById = (id: string | number) => {
