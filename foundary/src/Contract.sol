@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract CompanyCommentVoteV4 {
+contract CompanyCommentVoteV5 {
     struct Company {
         uint id;
         string name;

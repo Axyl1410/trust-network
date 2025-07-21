@@ -16,6 +16,7 @@ export function useStatusUpdate(account: string) {
 				signature: "event StatusUpdated(address indexed user, string newStatus, uint256 timestamp)",
 				filters: {
 					user: account,
+					StatusContract: contract.address,
 				},
 			}),
 		],
@@ -38,6 +39,7 @@ export function useFeedPosts(account: string) {
 				signature: "event StatusUpdated(address indexed user, string newStatus, uint256 timestamp)",
 				filters: {
 					user: account,
+					StatusContract: contract.address,
 				},
 			}),
 		],

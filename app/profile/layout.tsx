@@ -94,6 +94,6 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
 	if (!isAddress(account?.address)) {
 		return notFound();
 	}
-	// If account is connected, render the children (profile content)
+
 	return <>{children}</>;
 }

@@ -7,9 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Web3Avatar } from "@/components/ui/web3-avatar";
+import { SEPOLIA } from "@/constant/chain";
+import { thirdwebClient } from "@/lib/thirdweb";
 import { useFeedPosts } from "@/service/event-function/status-update";
 import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetCommentsByUser } from "@/service/read-function/get-comments-by-user";
+import { useGetReputation } from "@/service/read-function/get-reputation";
 import { Comment, Company, ProfileUserData } from "@/types";
 import {
 	formatCommentDate,
@@ -17,14 +20,22 @@ import {
 	formatRating,
 	formatUserDisplayName,
 } from "@/utils/format";
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, useWalletBalance } from "thirdweb/react";
 
 export default function ProfilePage() {
 	const account = useActiveAccount();
-
+	const { data: balance, isLoading } = useWalletBalance({
+		client: thirdwebClient,
+		chain: SEPOLIA,
+		address: account?.address,
+	});
 	const { data: comments } = useGetCommentsByUser(account?.address || "");
 	const { data: companies } = useGetAllCompanies();
 	const { data: feedPosts, isLoading: feedLoading } = useFeedPosts(account?.address || "");
+	const { data: repRaw, isLoading: repLoading } = useGetReputation(account?.address || "");
+
+	const reputation = repRaw ? Number(repRaw) : 0;
+	const totalReputation = reputation + (balance ? Number(balance.displayValue) : 0) * 100;
 
 	// Tìm tên công ty theo companyId
 	const getCompanyName = (companyId: bigint): string => {
@@ -115,6 +126,16 @@ export default function ProfilePage() {
 						<div className="flex items-center space-x-3">
 							<span className="text-muted-foreground text-sm sm:text-base">
 								@{userData.username}
+							</span>
+						</div>
+						{/* Reputation Display */}
+						<div className="mt-2 flex flex-col gap-1 text-sm">
+							<span>
+								<b>Total Reputation:</b>{" "}
+								{repLoading || isLoading ? "..." : totalReputation.toFixed()}
+							</span>
+							<span className="text-xs text-gray-500">
+								Formula: total = reputation + (token * 100)
 							</span>
 						</div>
 					</div>
