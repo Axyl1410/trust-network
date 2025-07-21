@@ -1,19 +1,18 @@
-import TransactionDialog, { TransactionStep } from "@/components/common/transaction-dialog";
+import TransactionDialog from "@/components/common/transaction-dialog";
 import { Button } from "@/components/ui/button";
 import { Contract } from "@/constant/contract";
+import { CreateCompanyProps, TransactionStep } from "@/types";
 import { useState } from "react";
 import { prepareContractCall } from "thirdweb";
 import { TransactionButton } from "thirdweb/react";
 import getThirdwebContract from "../get-contract";
 
-interface Props {
-	name: string;
-	description: string;
-	location: string;
-	website: string;
-}
-
-export default function CreateCompany({ name, description, location, website }: Props) {
+export default function CreateCompany({
+	name,
+	description,
+	location,
+	website,
+}: CreateCompanyProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [currentStep, setCurrentStep] = useState<TransactionStep>("sent");
 	const [message, setMessage] = useState("");

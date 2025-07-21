@@ -1,4 +1,4 @@
-import TransactionDialog, { TransactionStep } from "@/components/common/transaction-dialog";
+import TransactionDialog from "@/components/common/transaction-dialog";
 import { Button } from "@/components/ui/button";
 import { Contract } from "@/constant/contract";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
@@ -6,6 +6,7 @@ import { useState } from "react";
 import { prepareContractCall } from "thirdweb";
 import { TransactionButton } from "thirdweb/react";
 import getThirdwebContract from "../get-contract";
+import { TransactionStep } from "@/types";
 
 interface VoteButtonProps {
 	commentId: bigint;

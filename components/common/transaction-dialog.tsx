@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import loadingAnimation from "@/public/loader.json";
+import { TransactionDialogProps, TransactionStep } from "@/types";
 import Lottie from "lottie-react";
 import { CheckCircle, XCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -16,16 +17,6 @@ import {
 	DialogTitle,
 } from "../ui/dialog";
 
-export type TransactionStep = "sent" | "confirmed" | "success" | "error";
-
-interface TransactionDialogProps {
-	isOpen: boolean;
-	onOpenChange: (open: boolean) => void;
-	currentStep: TransactionStep;
-	title: string;
-	message: string;
-}
-
 const StepIcon = ({ step }: { step: TransactionStep }) => {
 	switch (step) {
 		case "sent":
@@ -36,9 +27,17 @@ const StepIcon = ({ step }: { step: TransactionStep }) => {
 				</div>
 			);
 		case "success":
-			return <CheckCircle className="h-8 w-8 text-green-500" />;
+			return (
+				<div className="flex h-18 w-18 items-center justify-center">
+					<CheckCircle className="h-8 w-8 text-green-500" />
+				</div>
+			);
 		case "error":
-			return <XCircle className="h-8 w-8 text-red-500" />;
+			return (
+				<div className="flex h-18 w-18 items-center justify-center">
+					<XCircle className="h-8 w-8 text-red-500" />
+				</div>
+			);
 	}
 };
 

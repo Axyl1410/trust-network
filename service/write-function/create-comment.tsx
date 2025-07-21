@@ -1,17 +1,21 @@
-import TransactionDialog, { TransactionStep } from "@/components/common/transaction-dialog";
+import TransactionDialog from "@/components/common/transaction-dialog";
 import { Button } from "@/components/ui/button";
 import { Contract } from "@/constant/contract";
+import { CreateCommentProps, TransactionStep } from "@/types";
 import { useState } from "react";
 import { prepareContractCall } from "thirdweb";
 import { TransactionButton } from "thirdweb/react";
 import getThirdwebContract from "../get-contract";
 
+<<<<<<< HEAD
 interface CreateCommentProps {
 	companyId: bigint;
 	content: string;
 	rating: number;
 }
 
+=======
+>>>>>>> origin/dev
 export default function CreateComment({ companyId, content, rating }: CreateCommentProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [currentStep, setCurrentStep] = useState<TransactionStep>("sent");
@@ -30,8 +34,14 @@ export default function CreateComment({ companyId, content, rating }: CreateComm
 					transaction={async () => {
 						const transaction = prepareContractCall({
 							contract,
+<<<<<<< HEAD
 							method: "function createComment(uint256 companyId, string content, uint8 rating) returns (uint256)",
 							params: [companyId, content, rating],
+=======
+							method:
+								"function createComment(uint256 companyId, string content, uint256 rating) returns (uint256)",
+							params: [companyId, content, BigInt(rating)],
+>>>>>>> origin/dev
 						});
 
 						setIsOpen(true);

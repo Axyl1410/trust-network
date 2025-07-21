@@ -1,6 +1,6 @@
 import { Chain, defineChain } from "thirdweb";
 
-export const FORMA_SKETCHPAD: Chain = defineChain({
+export const SEPOLIA: Chain = defineChain({
 	id: 4202,
 	name: "Lisk Sepolia Testnet",
 	nativeCurrency: {

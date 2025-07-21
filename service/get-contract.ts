@@ -1,4 +1,4 @@
-import { FORMA_SKETCHPAD } from "@/constant/chain";
+import { SEPOLIA } from "@/constant/chain";
 import { thirdwebClient } from "@/lib/thirdweb";
 import { getContract } from "thirdweb";
 
@@ -7,7 +7,7 @@ const getThirdwebContract = (address: string) => {
 		getContract({
 			client: thirdwebClient,
 			address: address,
-			chain: FORMA_SKETCHPAD,
+			chain: SEPOLIA,
 		}) ?? null
 	);
 };
