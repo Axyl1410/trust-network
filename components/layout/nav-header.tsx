@@ -8,11 +8,11 @@ import { WalletConnectButton } from "../common/wallet-button";
 export default function NavHeader() {
 	const [open, setOpen] = useState(false);
 	return (
-		<header className="flex h-16 w-full items-center border-b bg-white px-0 py-2">
+		<header className="fixed top-0 left-0 right-0 z-50 flex h-16 w-full items-center border-b bg-white px-0 py-2">
 			<div className="sr-only">
 				<ConnectButton client={thirdwebClient} />
 			</div>
-			<div className="mx-auto flex h-16 w-full max-w-6xl items-center px-4 sm:px-8">
+			<div className="w-full max-w-6xl mx-auto flex items-center h-16 px-4 sm:px-8">
 				{/* Logo trái */}
 				<Link
 					href="/"
@@ -30,12 +30,7 @@ export default function NavHeader() {
 					>
 						Write a review
 					</Link>
-					<Link
-						href="/categories"
-						className="text-sm font-medium text-gray-700 transition hover:text-blue-600"
-					>
-						Categories
-					</Link>
+				
 					<Link
 						href="/blog"
 						className="text-sm font-medium text-gray-700 transition hover:text-blue-600"
@@ -96,13 +91,7 @@ export default function NavHeader() {
 							>
 								Write a review
 							</Link>
-							<Link
-								href="/categories"
-								className="text-base font-medium text-gray-700 transition hover:text-blue-600"
-								onClick={() => setOpen(false)}
-							>
-								Categories
-							</Link>
+						
 							<Link
 								href="/blog"
 								className="text-base font-medium text-gray-700 transition hover:text-blue-600"
@@ -111,12 +100,11 @@ export default function NavHeader() {
 								Blog
 							</Link>
 							<Link
-								href="/login"
-								className="text-base font-medium text-gray-700 transition hover:text-blue-600"
-								onClick={() => setOpen(false)}
-							>
-								Log in
-							</Link>
+						href="/shop"
+						className="text-sm font-medium text-gray-700 transition hover:text-blue-600"
+					>
+						Shop
+					</Link>
 						</nav>
 						<div className="mt-6 flex flex-col gap-3">
 							<Link

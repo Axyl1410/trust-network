@@ -16,13 +16,17 @@ interface StatusUpdateFormProps {
 
 export function StatusUpdateForm({ onStatusUpdate }: StatusUpdateFormProps) {
 	const [status, setStatus] = useState("");
+	const [error, setError] = useState("");
 	const account = useActiveAccount();
 
 	const handleStatusUpdate = () => {
-		if (status.trim()) {
-			setStatus("");
-			onStatusUpdate?.();
+		if (!status.trim()) {
+			setError("Status cannot be empty!");
+			return;
 		}
+		setError("");
+		setStatus("");
+		onStatusUpdate?.();
 	};
 
 	if (!account?.address) {
@@ -60,10 +64,15 @@ export function StatusUpdateForm({ onStatusUpdate }: StatusUpdateFormProps) {
 						<div className="relative">
 							<Input
 								placeholder="What's on your mind?"
+								required
 								value={status}
-								onChange={(e) => setStatus(e.target.value)}
+								onChange={(e) => {
+									setStatus(e.target.value);
+									if (e.target.value.trim()) setError("");
+								}}
 								className="border-0 bg-gray-50/50 text-base text-gray-900 transition-all duration-300 placeholder:text-gray-400 focus:border-transparent focus:bg-white/80 focus:ring-2 focus:ring-blue-500/30"
 							/>
+							{error && <div className="text-red-500 text-xs mt-1">{error}</div>}
 						</div>
 
 						<div className="flex items-center justify-between pt-2">
@@ -142,7 +151,7 @@ export function StatusUpdateForm({ onStatusUpdate }: StatusUpdateFormProps) {
 								>
 									{status.length}/140
 								</span>
-								<SetStatus status={status} onSuccess={handleStatusUpdate} />
+								<SetStatus status={status} onSuccess={handleStatusUpdate} disabled={!status.trim()} />
 							</div>
 						</div>
 					</div>

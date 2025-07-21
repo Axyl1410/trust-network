@@ -1,3 +1,4 @@
+"use client";
 import { Toaster } from "@/components/ui/sonner";
 import NextTopLoader from "nextjs-toploader";
 import * as React from "react";
