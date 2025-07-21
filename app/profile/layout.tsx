@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { isAddress } from "ethers";
 import { notFound } from "next/navigation";
+import { isAddress } from "thirdweb";
 import { useActiveAccount } from "thirdweb/react";
 
 interface ProfileLayoutProps {
