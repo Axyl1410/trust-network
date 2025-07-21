@@ -10,6 +10,9 @@ import { useGetAllCommentsOfCompany } from "@/service/read-function/get-all-comm
 import { useGetReputation } from "@/service/read-function/get-reputation";
 import CompanyCard from "@/components/common/company-card";
 import { Web3Avatar } from "@/components/ui/web3-avatar";
+import getThirdwebContract from "@/service/get-contract";
+import { Contract } from "@/constant/contract";
+import { readContract } from "thirdweb";
 
 
 export default function HomePage() {
@@ -26,13 +29,6 @@ export default function HomePage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [companyNameResults, setCompanyNameResults] = useState<any[]>([]);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
-
-  // Bảng thống kê reviewer
-  const [reviewStats, setReviewStats] = useState<{
-    topReviewers: { address: string; count: number }[];
-    topReputation: { address: string; reputation: number }[];
-  }>({ topReviewers: [], topReputation: [] });
-  const [reputationMap, setReputationMap] = useState<Record<string, number>>({});
 
   // KOC thực tế
   const [koc, setKoc] = useState<{
@@ -158,63 +154,13 @@ export default function HomePage() {
   }, [search, isLoading, companyId, allCompanies, suggestions]);
 
   useEffect(() => {
-    async function calcStats() {
-      if (!Array.isArray(allCompanies)) return;
-      // Lấy tất cả review của tất cả công ty
-      const allReviews: any[] = [];
-      for (const c of allCompanies) {
-        try {
-          const res = await fetch(`/api/company-reviews?id=${c.id}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data)) allReviews.push(...data);
-          }
-        } catch {}
-      }
-      // Đếm số review theo author
-      const countMap: Record<string, number> = {};
-      allReviews.forEach(r => {
-        if (r.author) countMap[r.author] = (countMap[r.author] || 0) + 1;
-      });
-      // Top 5 reviewer nhiều nhất
-      const topReviewers = Object.entries(countMap)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([address, count]) => ({ address, count }));
-      // Lấy reputation từng author (gọi API hoặc contract)
-      const repMap: Record<string, number> = {};
-      for (const addr of Object.keys(countMap)) {
-        try {
-          const res = await fetch(`/api/reputation?address=${addr}`);
-          if (res.ok) {
-            const data = await res.json();
-            repMap[addr] = Number(data.reputation) || 0;
-          }
-        } catch {}
-      }
-      // Top 5 reputation cao nhất
-      const topReputation = Object.entries(repMap)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([address, reputation]) => ({ address, reputation }));
-      setReviewStats({ topReviewers, topReputation });
-      setReputationMap(repMap);
-    }
-    calcStats();
-  }, [allCompanies]);
-
-  useEffect(() => {
     async function calcKOC() {
       if (!Array.isArray(allCompanies)) return;
       // Lấy tất cả review của tất cả công ty
       const allReviews: any[] = [];
       for (const c of allCompanies) {
         try {
-          const contract = (await import("@/service/get-contract")).default;
-          const { Contract } = await import("@/constant/contract");
-          const getThirdwebContract = contract;
           const contractInstance = getThirdwebContract(Contract);
-          const { readContract } = await import("thirdweb");
           const reviews = await readContract({
             contract: contractInstance,
             method: "function getAllCommentsOfCompany(uint256 companyId) view returns ((uint256 id, address author, string content, uint256 createdAt, int256 votes, uint256 upvotes, uint256 downvotes, bool hidden, uint256 reportCount, uint256 rating, uint256 companyId)[])",
@@ -233,14 +179,10 @@ export default function HomePage() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([address, count]) => ({ address, count }));
-      // Lấy reputation cho top 5 reviewer nhiều nhất
+      // Lấy reputation cho top 5 reviewer nhiều nhất trực tiếp từ contract
       const repResults = await Promise.all(mostActive.map(async (r) => {
         try {
-          const contract = (await import("@/service/get-contract")).default;
-          const { Contract } = await import("@/constant/contract");
-          const getThirdwebContract = contract;
           const contractInstance = getThirdwebContract(Contract);
-          const { readContract } = await import("thirdweb");
           const rep = await readContract({
             contract: contractInstance,
             method: "function getReputation(address user) view returns (int256)",
