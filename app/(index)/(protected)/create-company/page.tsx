@@ -110,11 +110,11 @@ export default function CreateCompanyPage() {
             required
           />
         </div>
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition">
-          Tạo công ty
-        </button>
+        {/* <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition">
+          Create
+        </button> */}
       </form>
-      {showCreate && (
+      { (
         <CreateCompany
           name={form.name}
           description={""}

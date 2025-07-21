@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCompanyNameToId } from "@/service/read-function/company-name-to-id";
+import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
+import { useGetAllCommentsOfCompany } from "@/service/read-function/get-all-comments-of-company";
+import CompanyCard from "@/components/common/company-card";
 
 const categories = [
   { icon: "🏦", name: "Bank" },
@@ -21,7 +24,7 @@ const categories = [
   { icon: "🍽️", name: "Restaurants" },
 ];
 
-const allSuggestions = categories.map(c => c.name);
+
 
 export default function HomePage() {
   const router = useRouter();
@@ -31,22 +34,46 @@ export default function HomePage() {
   const [highlight, setHighlight] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const [chainCheck, setChainCheck] = useState<null | "checking" | "found" | "notfound">(null);
-
+  const { data: allCompanies, isLoading: isLoadingCompanies } = useGetAllCompanies();
   const { data: companyId, isLoading } = useCompanyNameToId(search);
+  const [searchedCompany, setSearchedCompany] = useState<any | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [companyNameResults, setCompanyNameResults] = useState<any[]>([]);
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+
+  const allSuggestions = categories.map(c => c.name);
+
+  // Hàm lấy thông tin công ty theo id từ allCompanies
+  const findCompanyById = (id: string | number) => {
+    if (!Array.isArray(allCompanies)) return null;
+    return allCompanies.find((c: any) => c.id?.toString() === id?.toString());
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch(value);
     if (value.trim()) {
-      setSuggestions(
-        allSuggestions.filter((s) =>
-          s.toLowerCase().includes(value.toLowerCase())
-        )
+      const filtered = allSuggestions.filter((s) =>
+        s.toLowerCase().includes(value.toLowerCase())
       );
-      setShowDropdown(true);
+      setSuggestions(filtered);
+      setShowDropdown(filtered.length > 0);
+      // Tìm công ty theo tên
+      if (Array.isArray(allCompanies)) {
+        const filteredCompanies = allCompanies.filter((c: any) =>
+          c.name?.toLowerCase().includes(value.toLowerCase())
+        );
+        setCompanyNameResults(filteredCompanies);
+        setShowCompanyDropdown(filteredCompanies.length > 0);
+      } else {
+        setCompanyNameResults([]);
+        setShowCompanyDropdown(false);
+      }
     } else {
       setSuggestions([]);
       setShowDropdown(false);
+      setCompanyNameResults([]);
+      setShowCompanyDropdown(false);
     }
     setHighlight(-1);
   };
@@ -75,25 +102,122 @@ export default function HomePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setChainCheck("checking");
-    // Nếu có trong local suggestions thì chuyển luôn
-    if (suggestions.includes(search)) {
-      router.push(`/review?query=${encodeURIComponent(search)}`);
-      return;
-    }
+    setSearchedCompany(null);
+    setSearchError(null);
+ 
     // Kiểm tra trên chain
     if (!isLoading && companyId && companyId?.toString() !== '0') {
       setChainCheck("found");
-      router.push(`/review?query=${encodeURIComponent(search)}`);
+      // Tìm thông tin công ty trong allCompanies
+      const found = findCompanyById(companyId?.toString());
+      if (found) {
+        setSearchedCompany(found);
+      } else {
+        setSearchError("Không tìm thấy thông tin công ty trên blockchain.");
+      }
     } else {
       setChainCheck("notfound");
+      setSearchError("Không tìm thấy công ty trên blockchain.");
     }
   };
+
+  useEffect(() => {
+    if (!search || search.trim() === "") {
+      setSearchedCompany(null);
+      setSearchError(null);
+      setCompanyNameResults([]);
+      return;
+    }
+    // Nếu có gợi ý category thì không tìm công ty
+    if (suggestions.length > 0) {
+      setSearchedCompany(null);
+      setSearchError(null);
+      setCompanyNameResults([]);
+      return;
+    }
+    // Tìm theo tên công ty (lọc local)
+    if (Array.isArray(allCompanies)) {
+      const filtered = allCompanies.filter((c: any) =>
+        c.name?.toLowerCase().includes(search.toLowerCase())
+      );
+      setCompanyNameResults(filtered);
+      if (filtered.length > 0) {
+        setSearchedCompany(null);
+        setSearchError(null);
+        return;
+      }
+    }
+    // Nếu không có công ty local phù hợp, fallback sang tìm trên blockchain (companyId)
+    if (!isLoading && companyId !== undefined) {
+      if (companyId && companyId.toString() !== "0") {
+        const found = findCompanyById(companyId?.toString());
+        if (found) {
+          setSearchedCompany(found);
+          setSearchError(null);
+        } else {
+          setSearchedCompany(null);
+          setSearchError("Không tìm thấy thông tin công ty trên blockchain.");
+        }
+      } else {
+        setSearchedCompany(null);
+        setSearchError("Không tìm thấy công ty trên blockchain.");
+      }
+    }
+  }, [search, isLoading, companyId, allCompanies, suggestions]);
+
+  // Tạo một component nhỏ để render từng item trong dropdown, fetch số lượng review
+  type CompanyDropdownItemProps = {
+    company: any;
+    highlight: number;
+    onClick: () => void;
+    onMouseEnter: () => void;
+    index: number;
+  };
+  function CompanyDropdownItem({ company, highlight, onClick, onMouseEnter, index }: CompanyDropdownItemProps) {
+    let companyId: bigint | undefined = undefined;
+    try {
+      companyId = BigInt(company.id);
+    } catch {}
+    const { data: comments } = companyId !== undefined ? useGetAllCommentsOfCompany(companyId) : { data: undefined };
+    return (
+      <li
+        className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition rounded-xl ${index === highlight ? "bg-blue-50" : ""}`}
+        onMouseDown={onClick}
+        onMouseEnter={onMouseEnter}
+        style={{ minHeight: 56 }}
+      >
+        {/* Icon tròn */}
+        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-xl">
+          {company.name?.[0] || "🏢"}
+        </div>
+        {/* Thông tin công ty */}
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-base truncate">{company.name}</div>
+          {company.website && (
+            <div className="text-xs text-blue-600 truncate">{company.website}</div>
+          )}
+        </div>
+        {/* Số lượng đánh giá */}
+        <div className="flex items-center gap-1 text-xs text-gray-500 ml-2">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="#fbbf24"/></svg>
+          {companyId !== undefined && Array.isArray(comments) ? comments.length : "..."}
+        </div>
+        {/* Nút xem đánh giá */}
+        <button
+          className="ml-4 px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition shadow"
+          tabIndex={-1}
+        >
+          Xem đánh giá
+        </button>
+      </li>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-white">
 
       {/* Hero Section */}
-      <section className="w-full flex flex-col items-center justify-center pt-16 pb-8 px-2 bg-white relative overflow-x-hidden">
+      <section className="w-full flex flex-col items-center justify-center pt-16 pb-8 px-2 bg-white relative ">
         {/* Decorative circles */}
         <div className="absolute left-0 top-0 w-72 h-72 bg-yellow-100 rounded-full -z-10 -translate-x-1/3 -translate-y-1/3" />
         <div className="absolute right-0 top-1/3 w-60 h-60 bg-orange-100 rounded-full -z-10 translate-x-1/3 -translate-y-1/3" />
@@ -113,17 +237,7 @@ export default function HomePage() {
             onChange={e => {
               const value = e.target.value;
               setSearch(value);
-              if (value.trim()) {
-                setSuggestions(
-                  allSuggestions.filter((s) =>
-                    s.toLowerCase().includes(value.toLowerCase())
-                  )
-                );
-                setShowDropdown(true);
-              } else {
-                setSuggestions([]);
-                setShowDropdown(false);
-              }
+             
               setHighlight(-1);
               setChainCheck(null);
             }}
@@ -175,6 +289,42 @@ export default function HomePage() {
             <p className="mb-2 text-gray-700">Không tìm thấy công ty. Bạn muốn <Link href="/create-company" className="text-blue-600 underline">tạo mới doanh nghiệp</Link>?</p>
           </div>
         )}
+        {searchedCompany && (
+          <div className="w-full max-w-xl mx-auto mb-6">
+            <CompanyCard company={searchedCompany} />
+          </div>
+        )}
+        {searchError && (
+          <div className="w-full max-w-xl mx-auto mb-6 text-center text-red-600 bg-white border rounded-lg p-4 shadow-sm">
+            {searchError}
+          </div>
+        )}
+        {showCompanyDropdown && companyNameResults.length > 0 && (
+          <ul className="absolute left-0 top-full mt-2 w-full bg-white rounded-xl shadow-lg border z-20 max-h-80 overflow-auto py-2">
+            {companyNameResults.map((company, i) => (
+              <CompanyDropdownItem
+                key={company.id}
+                company={company}
+                highlight={highlight}
+                index={i}
+                onClick={() => {
+                  setSearch(company.name);
+                  setShowCompanyDropdown(false);
+                  setShowDropdown(false);
+                  router.push(`/review?query=${encodeURIComponent(company.name)}`);
+                }}
+                onMouseEnter={() => setHighlight(i)}
+              />
+            ))}
+          </ul>
+        )}
+        {companyNameResults.length > 0 && !showCompanyDropdown && (
+          <div className="w-full max-w-2xl mx-auto mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {companyNameResults.map((company) => (
+              <CompanyCard key={company.id} company={company} />
+            ))}
+          </div>
+        )}
         <div className="text-sm text-gray-500 mb-2">
           Bought something recently?{' '}
           <Link href="/review" className="text-blue-700 font-semibold hover:underline">Write a review →</Link>
@@ -195,6 +345,23 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+      </section>
+      {/* Companies on chain */}
+      <section className="w-full max-w-6xl mx-auto px-2 pb-16">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Companies</h2>
+        {isLoadingCompanies ? (
+          <div className="text-center text-gray-500">Đang tải danh sách công ty...</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.isArray(allCompanies) && allCompanies.length > 0 ? (
+              allCompanies.map((company: any) => (
+                <CompanyCard key={company.id} company={company} />
+              ))
+            ) : (
+              <div className="col-span-full text-center text-gray-500">Chưa có công ty nào trên blockchain.</div>
+            )}
+          </div>
+        )}
       </section>
     </div>
   );

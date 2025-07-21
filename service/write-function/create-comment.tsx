@@ -9,9 +9,10 @@ import getThirdwebContract from "../get-contract";
 interface CreateCommentProps {
 	companyId: bigint;
 	content: string;
+	rating: number;
 }
 
-export default function CreateComment({ companyId, content }: CreateCommentProps) {
+export default function CreateComment({ companyId, content, rating }: CreateCommentProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [currentStep, setCurrentStep] = useState<TransactionStep>("sent");
 	const [message, setMessage] = useState("");
@@ -29,8 +30,8 @@ export default function CreateComment({ companyId, content }: CreateCommentProps
 					transaction={async () => {
 						const transaction = prepareContractCall({
 							contract,
-							method: "function createComment(uint256 companyId, string content) returns (uint256)",
-							params: [companyId, content],
+							method: "function createComment(uint256 companyId, string content, uint8 rating) returns (uint256)",
+							params: [companyId, content, rating],
 						});
 
 						setIsOpen(true);
