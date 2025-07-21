@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { thirdwebClient } from "@/lib/thirdweb";
 import { base } from "thirdweb/chains";
@@ -10,31 +10,21 @@ export default function Page() {
 		<div className="container mx-auto my-8 max-w-6xl px-4">
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
 				{/* Left Column - Product Image */}
-				<div className="space-y-4">
-					<div className="overflow-hidden rounded-lg">
-						<img
-							src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop"
-							alt="Concert Ticket"
-							className="h-full w-full object-cover"
-						/>
-					</div>
-
-					{/* Thumbnail Gallery */}
-					<div className="grid grid-cols-4 gap-2">
-						{[
-							"https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=200&h=150&fit=crop",
-							"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=150&fit=crop",
-							"https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=200&h=150&fit=crop",
-							"https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=200&h=150&fit=crop",
-						].map((src, index) => (
-							<div
-								key={index}
-								className="hover:border-primary cursor-pointer overflow-hidden rounded-md border-2 border-transparent"
-							>
-								<img src={src} alt={`Gallery ${index + 1}`} className="h-20 w-full object-cover" />
-							</div>
-						))}
-					</div>
+				<div className="flex h-fit justify-center space-y-4">
+					<CheckoutWidget
+						client={thirdwebClient}
+						theme="light"
+						chain={base}
+						amount={"2"}
+						tokenAddress="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+						seller="0x2349Db8bdf85bd80bFc4afb715a69fb4C6463B96"
+						feePayer="seller"
+						name="Concert Ticket"
+						image="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=500&h=300&fit=crop"
+						description="Concert ticket for the upcoming show"
+						showThirdwebBranding={false}
+						className="w-full"
+					/>
 				</div>
 
 				{/* Right Column - Product Details & Checkout */}
@@ -188,32 +178,6 @@ export default function Page() {
 									<span className="text-sm">Meet & greet opportunity</span>
 								</li>
 							</ul>
-						</CardContent>
-					</Card>
-
-					<Separator />
-
-					{/* Checkout Widget */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Purchase Ticket</CardTitle>
-							<CardDescription>Complete your purchase using cryptocurrency</CardDescription>
-						</CardHeader>
-						<CardContent className="flex w-full items-center justify-center">
-							<CheckoutWidget
-								client={thirdwebClient}
-								theme="light"
-								chain={base}
-								amount={"2"}
-								tokenAddress="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
-								seller="0x2349Db8bdf85bd80bFc4afb715a69fb4C6463B96"
-								feePayer="seller"
-								name="Concert Ticket"
-								image="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=500&h=300&fit=crop"
-								description="Concert ticket for the upcoming show"
-								showThirdwebBranding={false}
-								className="w-full"
-							/>
 						</CardContent>
 					</Card>
 				</div>

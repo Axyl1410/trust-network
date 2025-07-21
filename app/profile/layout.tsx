@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { isAddress } from "ethers";
+import { notFound } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 
 interface ProfileLayoutProps {
@@ -89,6 +91,9 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
 		);
 	}
 
+	if (!isAddress(account?.address)) {
+		return notFound();
+	}
 	// If account is connected, render the children (profile content)
 	return <>{children}</>;
 }

@@ -9,34 +9,9 @@ import { useFeedPosts } from "@/service/event-function/status-update";
 import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetCommentsByUser } from "@/service/read-function/get-comments-by-user";
 import { Comment, Company, ProfileUserData } from "@/types";
-import { FeedPost } from "@/types/common";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
-
-// Mock data for feed posts (fallback when no real posts exist)
-const mockFeedPosts: FeedPost[] = [
-	{
-		id: "mock-1",
-		user: "0x2349Db8bdf85bd80bFc4afb715a69fb4C6463B96",
-		content:
-			"Getting Started with Web3 Development - Web3 development is revolutionizing how we build applications. In this post, I'll share my journey and some key insights...",
-		timestamp: BigInt(Math.floor(Date.now() / 1000) - 3600), // 1 hour ago
-		likes: 42,
-		comments: 8,
-		shares: 3,
-	},
-	{
-		id: "mock-2",
-		user: "0x2349Db8bdf85bd80bFc4afb715a69fb4C6463B96",
-		content:
-			"Understanding Smart Contracts - Smart contracts are self-executing contracts with the terms of the agreement directly written into code...",
-		timestamp: BigInt(Math.floor(Date.now() / 1000) - 7200), // 2 hours ago
-		likes: 67,
-		comments: 12,
-		shares: 5,
-	},
-];
 
 interface ProfilePageProps {
 	params: Promise<{
@@ -276,10 +251,8 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 								) : feedPosts && feedPosts.length > 0 ? (
 									feedPosts.map((post) => <FeedPostComponent key={post.id} post={post} />)
 								) : (
-									<div className="space-y-6">
-										{mockFeedPosts.map((post) => (
-											<FeedPostComponent key={post.id} post={post} />
-										))}
+									<div className="py-8 text-center">
+										<p className="text-muted-foreground">No feed posts found.</p>
 									</div>
 								)}
 							</div>
