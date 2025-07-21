@@ -9,22 +9,6 @@ import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetAllCommentsOfCompany } from "@/service/read-function/get-all-comments-of-company";
 import CompanyCard from "@/components/common/company-card";
 
-// const categories = [
-// 	{ icon: "🏦", name: "Bank" },
-// 	{ icon: "✈️", name: "Travel Insurance Company" },
-// 	{ icon: "🚗", name: "Car Dealer" },
-// 	{ icon: "🛋️", name: "Furniture Store" },
-// 	{ icon: "💎", name: "Jewelry Store" },
-// 	{ icon: "👕", name: "Clothing Store" },
-// 	{ icon: "📱", name: "Electronics & Technology" },
-// 	{ icon: "🥗", name: "Fitness and Nutrition Service" },
-// 	{ icon: "❤️", name: "Health & Beauty" },
-// 	{ icon: "🏠", name: "Home Services" },
-// 	{ icon: "🛒", name: "Online Shopping" },
-// 	{ icon: "🍽️", name: "Restaurants" },
-// ];
-
-
 
 export default function HomePage() {
   const router = useRouter();
@@ -41,8 +25,6 @@ export default function HomePage() {
   const [companyNameResults, setCompanyNameResults] = useState<any[]>([]);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
 
-  // const allSuggestions = categories.map(c => c.name);
-
   // Hàm lấy thông tin công ty theo id từ allCompanies
   const findCompanyById = (id: string | number) => {
     if (!Array.isArray(allCompanies)) return null;
@@ -53,11 +35,6 @@ export default function HomePage() {
     const value = e.target.value;
     setSearch(value);
     if (value.trim()) {
-      // const filtered = allSuggestions.filter((s) =>
-      //   s.toLowerCase().includes(value.toLowerCase())
-      // );
-      // setSuggestions(filtered);
-      // setShowDropdown(filtered.length > 0);
       // Tìm công ty theo tên
       if (Array.isArray(allCompanies)) {
         const filteredCompanies = allCompanies.filter((c: any) =>
@@ -113,11 +90,11 @@ export default function HomePage() {
       if (found) {
         setSearchedCompany(found);
       } else {
-        setSearchError("Không tìm thấy thông tin công ty trên blockchain.");
+        setSearchError("Could not find company information on the blockchain.");
       }
     } else {
       setChainCheck("notfound");
-      setSearchError("Không tìm thấy công ty trên blockchain.");
+      setSearchError("Could not find company on the blockchain.");
     }
   };
 
@@ -156,11 +133,11 @@ export default function HomePage() {
           setSearchError(null);
         } else {
           setSearchedCompany(null);
-          setSearchError("Không tìm thấy thông tin công ty trên blockchain.");
+          setSearchError("Could not find company information on the blockchain.");
         }
       } else {
         setSearchedCompany(null);
-        setSearchError("Không tìm thấy công ty trên blockchain.");
+        setSearchError("Could not find company on the blockchain.");
       }
     }
   }, [search, isLoading, companyId, allCompanies, suggestions]);
@@ -286,7 +263,7 @@ export default function HomePage() {
         </form>
         {chainCheck === "notfound" && (
           <div className="relative text-center my-6 bg-white border rounded-lg p-6 shadow-sm">
-            <p className="mb-2 text-gray-700">Không tìm thấy công ty. Bạn muốn <Link href="/create-company" className="text-blue-600 underline">tạo mới doanh nghiệp</Link>?</p>
+            <p className="mb-2 text-gray-700">Could not find company. Would you like to <Link href="/create-company" className="text-blue-600 underline">create a new company</Link>?</p>
           </div>
         )}
         {searchedCompany && (
@@ -350,7 +327,7 @@ export default function HomePage() {
       <section className="w-full max-w-6xl mx-auto px-2 pb-16">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Companies</h2>
         {isLoadingCompanies ? (
-          <div className="text-center text-gray-500">Đang tải danh sách công ty...</div>
+          <div className="text-center text-gray-500">Loading company list...</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.isArray(allCompanies) && allCompanies.length > 0 ? (
@@ -358,7 +335,7 @@ export default function HomePage() {
                 <CompanyCard key={company.id} company={company} />
               ))
             ) : (
-              <div className="col-span-full text-center text-gray-500">Chưa có công ty nào trên blockchain.</div>
+              <div className="col-span-full text-center text-gray-500">No companies found on the blockchain.</div>
             )}
           </div>
         )}

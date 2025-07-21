@@ -23,6 +23,7 @@ import { useGetAllCommentsOfCompany } from "@/service/read-function/get-all-comm
 import CreateComment from "@/service/write-function/create-comment";
 import { UpvoteButton, DownvoteButton } from "@/service/write-function/vote";
 import { useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 
 // Define proper types for the data structures
 interface CompanyInfo {
@@ -57,6 +58,7 @@ export default function ReviewPage() {
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   const account = useActiveAccount();
   const { connect } = useConnectModal();
@@ -186,7 +188,12 @@ export default function ReviewPage() {
   }
   if (companyIdBigInt && writeMode) {
     const [id, name, description, location, website, admin] = queriedCompanyInfo || [];
-    const hasReviewed = account && Array.isArray(reviews) && reviews.some((review: any) => review.author.toLowerCase() === account.address.toLowerCase());
+
+    // Function to reload reviews (by refreshing router)
+    const handleReviewSuccess = () => {
+      setShowReviewModal(false);
+      router.refresh();
+    };
 
     return (
       <div className="max-w-2xl mx-auto py-8">
@@ -198,15 +205,25 @@ export default function ReviewPage() {
         </div>
         <div className="mt-8 border rounded-xl p-6 bg-gray-50 shadow-md">
           <h2 className="font-bold mb-2 text-xl flex items-center gap-2">
-            <PenLine className="text-blue-600" /> Write a review for <span className="text-blue-700">{name}</span>
+            <PenLine className="text-blue-600" /> Reviews for <span className="text-blue-700">{name}</span>
           </h2>
-          {hasReviewed ? (
-            <div className="text-center text-gray-600 py-4">
-              <p>You have already reviewed this company.</p>
-            </div>
-          ) : (
-            <ReviewForm companyId={companyIdBigInt} />
-          )}
+          <button
+            className="px-4 py-2 bg-blue-700 text-white rounded font-semibold shadow hover:bg-blue-800"
+            onClick={() => setShowReviewModal(true)}
+          >
+            Write a review
+          </button>
+          <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Write a review for {name}</DialogTitle>
+              </DialogHeader>
+              <ReviewForm companyId={companyIdBigInt} onSuccess={handleReviewSuccess} />
+              <DialogClose asChild>
+                <button className="mt-4 px-4 py-2 bg-gray-200 rounded font-semibold">Close</button>
+              </DialogClose>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     );
@@ -231,6 +248,12 @@ export default function ReviewPage() {
     return ((starCounts[star] / total) * 100).toFixed(1);
   }
 
+  // Popup logic for review form (always available)
+  const handleReviewSuccess = () => {
+    setShowReviewModal(false);
+    router.refresh();
+  };
+
   return (
     <div className="max-w-5xl mx-auto py-8 px-2 font-sans">
       {/* Header */}
@@ -250,7 +273,7 @@ export default function ReviewPage() {
               </span>
             </div>
             <div className="flex gap-2 mt-2">
-              <button onClick={() => router.push(`/review?id=${id}&write=1`)} className="px-4 py-2 bg-blue-700 text-white rounded font-semibold shadow hover:bg-blue-800">Write a review</button>
+              <button onClick={() => setShowReviewModal(true)} className="px-4 py-2 bg-blue-700 text-white rounded font-semibold shadow hover:bg-blue-800">Write a review</button>
               {website && (
                 <a href={website} target="_blank" rel="noopener noreferrer" className="px-4 py-2 border rounded text-blue-700 font-semibold hover:bg-blue-50 flex items-center gap-1">
                   Visit website <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 3h7v7m0-7L10 14m-4 7h7v-7"/></svg>
@@ -309,7 +332,7 @@ export default function ReviewPage() {
               try { commentId = BigInt(review.id); } catch { commentId = undefined; }
               return (
                 <div key={review.id} className="border rounded p-4 bg-gray-50">
-                  <div className="text-sm text-gray-700 mb-1">{content}</div>
+                  <div className="text-sm text-gray-700 mb-1" dangerouslySetInnerHTML={{ __html: linkify(content) }} />
                   <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
                     <span>Author: {author}</span>
                     {createdAt && <span>Date: {createdAt}</span>}
@@ -327,39 +350,48 @@ export default function ReviewPage() {
           <div className="text-gray-500">There are no reviews for this company yet.</div>
         )}
       </div>
+      <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Write a review for {name}</DialogTitle>
+          </DialogHeader>
+          <ReviewForm companyId={companyIdBigInt} onSuccess={handleReviewSuccess} />
+          <DialogClose asChild>
+            <button className="mt-4 px-4 py-2 bg-gray-200 rounded font-semibold">Close</button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function ReviewForm({ companyId }: { companyId: bigint }) {
+function ReviewForm({ companyId, onSuccess }: { companyId: bigint, onSuccess?: () => void }) {
   const [content, setContent] = useState("");
   const [rating, setRating] = useState<bigint>(BigInt(5));
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-   router.replace(`http://localhost:3000/review?id=${companyId}`)
+    // Do nothing here, handled by CreateComment
   };
-
- 
 
   return (
     <form onSubmit={handleSubmit}>
-       <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Your rating</label>
-          <div className="flex items-center">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => setRating(BigInt(star))}
-                className={`text-3xl ${rating >= star ? 'text-green-600' : 'text-gray-300'}`}
-              >
-                ★
-              </button>
-            ))}
-          </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Your rating</label>
+        <div className="flex items-center">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              onClick={() => setRating(BigInt(star))}
+              className={`text-3xl ${rating >= star ? 'text-green-600' : 'text-gray-300'}`}
+            >
+              ★
+            </button>
+          ))}
         </div>
+      </div>
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -368,8 +400,17 @@ function ReviewForm({ companyId }: { companyId: bigint }) {
         required
       />
       <div className="mt-3">
-        <CreateComment companyId={companyId} content={content} rating={rating}  />
+        <CreateComment companyId={companyId} content={content} rating={rating} onSuccess={onSuccess} />
       </div>
     </form>
   );
+} 
+
+function linkify(text: string) {
+  const urlRegex = /(https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+)|(www\.[\w\-._~:/?#[\]@!$&'()*+,;=%]+)/gi;
+  return text.replace(urlRegex, (url) => {
+    let href = url;
+    if (!href.startsWith('http')) href = 'http://' + href;
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-all">${url}</a>`;
+  });
 } 
