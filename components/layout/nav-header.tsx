@@ -30,12 +30,7 @@ export default function NavHeader() {
 					>
 						Write a review
 					</Link>
-					<Link
-						href="/categories"
-						className="text-sm font-medium text-gray-700 transition hover:text-blue-600"
-					>
-						Categories
-					</Link>
+				
 					<Link
 						href="/blog"
 						className="text-sm font-medium text-gray-700 transition hover:text-blue-600"
@@ -96,13 +91,7 @@ export default function NavHeader() {
 							>
 								Write a review
 							</Link>
-							<Link
-								href="/categories"
-								className="text-base font-medium text-gray-700 transition hover:text-blue-600"
-								onClick={() => setOpen(false)}
-							>
-								Categories
-							</Link>
+						
 							<Link
 								href="/blog"
 								className="text-base font-medium text-gray-700 transition hover:text-blue-600"
@@ -111,12 +100,11 @@ export default function NavHeader() {
 								Blog
 							</Link>
 							<Link
-								href="/login"
-								className="text-base font-medium text-gray-700 transition hover:text-blue-600"
-								onClick={() => setOpen(false)}
-							>
-								Log in
-							</Link>
+						href="/shop"
+						className="text-sm font-medium text-gray-700 transition hover:text-blue-600"
+					>
+						Shop
+					</Link>
 						</nav>
 						<div className="mt-6 flex flex-col gap-3">
 							<Link

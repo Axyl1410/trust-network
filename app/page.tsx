@@ -7,7 +7,9 @@ import { useState, useRef, useEffect } from "react";
 import { useCompanyNameToId } from "@/service/read-function/company-name-to-id";
 import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetAllCommentsOfCompany } from "@/service/read-function/get-all-comments-of-company";
+import { useGetReputation } from "@/service/read-function/get-reputation";
 import CompanyCard from "@/components/common/company-card";
+import { Web3Avatar } from "@/components/ui/web3-avatar";
 
 
 export default function HomePage() {
@@ -24,6 +26,19 @@ export default function HomePage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [companyNameResults, setCompanyNameResults] = useState<any[]>([]);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+
+  // Bảng thống kê reviewer
+  const [reviewStats, setReviewStats] = useState<{
+    topReviewers: { address: string; count: number }[];
+    topReputation: { address: string; reputation: number }[];
+  }>({ topReviewers: [], topReputation: [] });
+  const [reputationMap, setReputationMap] = useState<Record<string, number>>({});
+
+  // KOC thực tế
+  const [koc, setKoc] = useState<{
+    mostActive: { address: string; count: number; reputation: number|null }[];
+    mostReputable: { address: string; reputation: number }[];
+  }>({ mostActive: [], mostReputable: [] });
 
   // Hàm lấy thông tin công ty theo id từ allCompanies
   const findCompanyById = (id: string | number) => {
@@ -141,6 +156,113 @@ export default function HomePage() {
       }
     }
   }, [search, isLoading, companyId, allCompanies, suggestions]);
+
+  useEffect(() => {
+    async function calcStats() {
+      if (!Array.isArray(allCompanies)) return;
+      // Lấy tất cả review của tất cả công ty
+      const allReviews: any[] = [];
+      for (const c of allCompanies) {
+        try {
+          const res = await fetch(`/api/company-reviews?id=${c.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) allReviews.push(...data);
+          }
+        } catch {}
+      }
+      // Đếm số review theo author
+      const countMap: Record<string, number> = {};
+      allReviews.forEach(r => {
+        if (r.author) countMap[r.author] = (countMap[r.author] || 0) + 1;
+      });
+      // Top 5 reviewer nhiều nhất
+      const topReviewers = Object.entries(countMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([address, count]) => ({ address, count }));
+      // Lấy reputation từng author (gọi API hoặc contract)
+      const repMap: Record<string, number> = {};
+      for (const addr of Object.keys(countMap)) {
+        try {
+          const res = await fetch(`/api/reputation?address=${addr}`);
+          if (res.ok) {
+            const data = await res.json();
+            repMap[addr] = Number(data.reputation) || 0;
+          }
+        } catch {}
+      }
+      // Top 5 reputation cao nhất
+      const topReputation = Object.entries(repMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([address, reputation]) => ({ address, reputation }));
+      setReviewStats({ topReviewers, topReputation });
+      setReputationMap(repMap);
+    }
+    calcStats();
+  }, [allCompanies]);
+
+  useEffect(() => {
+    async function calcKOC() {
+      if (!Array.isArray(allCompanies)) return;
+      // Lấy tất cả review của tất cả công ty
+      const allReviews: any[] = [];
+      for (const c of allCompanies) {
+        try {
+          const contract = (await import("@/service/get-contract")).default;
+          const { Contract } = await import("@/constant/contract");
+          const getThirdwebContract = contract;
+          const contractInstance = getThirdwebContract(Contract);
+          const { readContract } = await import("thirdweb");
+          const reviews = await readContract({
+            contract: contractInstance,
+            method: "function getAllCommentsOfCompany(uint256 companyId) view returns ((uint256 id, address author, string content, uint256 createdAt, int256 votes, uint256 upvotes, uint256 downvotes, bool hidden, uint256 reportCount, uint256 rating, uint256 companyId)[])",
+            params: [BigInt(c.id)],
+          });
+          if (Array.isArray(reviews)) allReviews.push(...reviews);
+        } catch {}
+      }
+      // Đếm số review theo author
+      const countMap: Record<string, number> = {};
+      allReviews.forEach(r => {
+        if (r.author && /^0x[a-fA-F0-9]{40}$/.test(r.author)) countMap[r.author] = (countMap[r.author] || 0) + 1;
+      });
+      // Top 5 reviewer nhiều nhất
+      const mostActive = Object.entries(countMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([address, count]) => ({ address, count }));
+      // Lấy reputation cho top 5 reviewer nhiều nhất
+      const repResults = await Promise.all(mostActive.map(async (r) => {
+        try {
+          const contract = (await import("@/service/get-contract")).default;
+          const { Contract } = await import("@/constant/contract");
+          const getThirdwebContract = contract;
+          const contractInstance = getThirdwebContract(Contract);
+          const { readContract } = await import("thirdweb");
+          const rep = await readContract({
+            contract: contractInstance,
+            method: "function getReputation(address user) view returns (int256)",
+            params: [r.address],
+          });
+          return { ...r, reputation: Number(rep) || 0 };
+        } catch (err) {
+          console.error('Error fetching reputation for', r.address, err);
+          return { ...r, reputation: null };
+        }
+      }));
+      // Top 5 theo reputation trong số reviewer nhiều nhất
+      const mostReputable = [...repResults]
+        .filter(r => typeof r.reputation === 'number' && !isNaN(r.reputation))
+        .sort((a, b) => (b.reputation ?? 0) - (a.reputation ?? 0))
+        .slice(0, 5)
+        .map(r => ({ address: r.address, reputation: r.reputation ?? 0 }));
+      setKoc({ mostActive: repResults, mostReputable });
+    }
+    setKoc({ mostActive: [], mostReputable: [] }); // clear khi loading
+    calcKOC();
+  }, [allCompanies]);
 
   // Tạo một component nhỏ để render từng item trong dropdown, fetch số lượng review
   type CompanyDropdownItemProps = {
@@ -322,8 +444,46 @@ export default function HomePage() {
             </div>
           ))}
         </div>
-      </section> */}
+      </section> */}  
       {/* Companies on chain */}
+      <section className="w-full max-w-6xl mx-auto px-2 pb-8">
+        <h2 className="text-xl font-bold mb-2">Leaderboard</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center">
+            <h3 className="font-semibold mb-2 text-blue-700">Top 5 Most Active Reviewers</h3>
+            {koc.mostActive.length === 0 ? <span>Loading...</span> : (
+              <ol className="list-decimal ml-5 space-y-3 w-full">
+                {koc.mostActive.map((r, i) => (
+                  <li key={r.address} className="flex items-center gap-3">
+                    <Link href={`/profile/${r.address}`} className="flex items-center gap-2">
+                      <Web3Avatar address={r.address} className="w-10 h-10" />
+                      <span className="font-mono text-base">{r.address.slice(0, 8)}...{r.address.slice(-4)}</span>
+                      <span className="text-gray-500 text-sm">{r.count} reviews</span>
+                      <span className="text-green-700 text-xs font-semibold ml-2">{typeof r.reputation === 'number' ? `${r.reputation} rep` : 'N/A'}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+          <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center">
+            <h3 className="font-semibold mb-2 text-green-700">Top 5 Highest Reputation</h3>
+            {koc.mostReputable.length === 0 ? <span>Loading...</span> : (
+              <ol className="list-decimal ml-5 space-y-3 w-full">
+                {koc.mostReputable.map((r, i) => (
+                  <li key={r.address} className="flex items-center gap-3">
+                    <Link href={`/profile/${r.address}`} className="flex items-center gap-2">
+                      <Web3Avatar address={r.address} className="w-10 h-10" />
+                      <span className="font-mono text-base">{r.address.slice(0, 8)}...{r.address.slice(-4)}</span>
+                      <span className="text-green-700 text-xs font-semibold ml-2">{typeof r.reputation === 'number' ? `${r.reputation} rep` : 'N/A'}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </div>
+      </section>
       <section className="w-full max-w-6xl mx-auto px-2 pb-16">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Companies</h2>
         {isLoadingCompanies ? (
