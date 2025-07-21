@@ -77,6 +77,10 @@ export default function CreateCompanyPage() {
       <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
         <Building2 className="text-blue-600" /> Create a new company
       </h1>
+      {/* Blockchain note (English) */}
+      <div className="mb-4 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 text-sm rounded">
+        <strong>Note:</strong> Company information will be permanently recorded on the blockchain and <b>cannot be edited or deleted</b>.
+      </div>
       <form onSubmit={handleSubmit} className="border rounded-xl p-6 bg-gray-50 shadow-md">
         <div className="mb-3">
           <label className="block mb-1 font-medium flex items-center gap-1">

@@ -6,7 +6,7 @@ import { useGetAllCommentsOfCompany } from "@/service/read-function/get-all-comm
 import { useGetAverageRating } from "@/service/read-function/get-average-rating";
 import { useGetCompanyRatingStats } from "@/service/read-function/get-company-rating-stats";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import ReviewList from "@/components/common/ReviewList";
 import CreateComment from "@/service/write-function/create-comment";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
@@ -47,29 +47,39 @@ export default function ReviewDetailPage() {
     ratingLevelColor = 'text-red-600';
   }
 
+  const reviewsHash = useMemo(() => JSON.stringify((reviews || []).map(r => r.content)), [reviews]);
+  const lastHashRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (reviews && reviews.length > 0) {
-      const fetchSummary = async () => {
-        setIsSummarizing(true);
-        try {
-          const reviewContents = reviews.map((r: any) => r.content);
-          const res = await fetch('/api/summarize-reviews', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reviews: reviewContents }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            setSummary(data.summary);
-          }
-        } catch (error) {
-          setSummary("Could not generate a summary at this time.");
-        }
-        setIsSummarizing(false);
-      };
-      fetchSummary();
+    if (!reviews || reviews.length === 0) {
+      setSummary(null);
+      return;
     }
-  }, [reviews]);
+    if (reviewsHash === lastHashRef.current) return; // Không gọi lại nếu nội dung không đổi
+    lastHashRef.current = reviewsHash;
+
+    const fetchSummary = async () => {
+      setIsSummarizing(true);
+      try {
+        const reviewContents = reviews.map((r: any) => r.content);
+        const res = await fetch('/api/summarize-reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reviews: reviewContents }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSummary(data.summary || "Summary not available at this time.");
+        } else {
+          setSummary("Summary not available at this time.");
+        }
+      } catch (error) {
+        setSummary("Summary not available at this time.");
+      }
+      setIsSummarizing(false);
+    };
+    fetchSummary();
+  }, [reviewsHash]);
 
   if (!companyIdBigInt) {
     return <div className="text-center py-8 text-gray-500">Please select a company to see the details.</div>;
@@ -202,6 +212,36 @@ export default function ReviewDetailPage() {
           <DialogHeader>
             <DialogTitle>Write a review for {name}</DialogTitle>
           </DialogHeader>
+          {/* Blockchain note (English) */}
+          <div className="mb-2 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 text-sm rounded">
+            <strong>Note:</strong> Your review will be permanently recorded on the blockchain and <b>cannot be edited or deleted</b>.
+          </div>
+          {/* Form nhập nội dung và rating */}
+          <div className="mb-4 space-y-3">
+            <label className="block text-sm font-medium text-gray-700">Your review</label>
+            <textarea
+              className="w-full border rounded p-2 min-h-[80px] focus:outline-blue-400"
+              placeholder="Write your review here..."
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              maxLength={500}
+            />
+            <label className="block text-sm font-medium text-gray-700 mt-2">Your rating</label>
+            <div className="flex items-center gap-2">
+              {[1,2,3,4,5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  className={`text-2xl ${Number(rating) >= star ? 'text-yellow-400' : 'text-gray-300'} focus:outline-none`}
+                  onClick={() => setRating(BigInt(star))}
+                  aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                >
+                  ★
+                </button>
+              ))}
+              <span className="ml-2 text-sm text-gray-500">{Number(rating)} star{Number(rating) > 1 ? 's' : ''}</span>
+            </div>
+          </div>
           <CreateComment companyId={safeCompanyId} content={content} rating={rating} onSuccess={handleReviewSuccess} />
           <DialogClose asChild>
             <button className="mt-4 px-4 py-2 bg-gray-200 rounded font-semibold">Close</button>
