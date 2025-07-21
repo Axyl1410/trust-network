@@ -1,61 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useActiveAccount, useConnectModal } from "thirdweb/react";
 import { thirdwebClient } from "@/lib/thirdweb";
-import {
-  Search,
-  Building2,
-  Globe,
-  MapPin,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  UserCircle2,
-  PenLine,
-  PlusCircle,
-  Wallet,
-} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCompanyNameToId } from "@/service/read-function/company-name-to-id";
 import { useCompanies } from "@/service/read-function/companies";
 import { useGetAllCommentsOfCompany } from "@/service/read-function/get-all-comments-of-company";
 import CreateComment from "@/service/write-function/create-comment";
 import { UpvoteButton, DownvoteButton } from "@/service/write-function/vote";
-import { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
-
-// Define proper types for the data structures
-interface CompanyInfo {
-	title: string;
-	snippet: string;
-	link: string;
-}
-
-interface SearchResult {
-	id: string;
-	name: string;
-	// Add other properties as needed
-}
-
-interface FormData {
-	name: string;
-	link: string;
-	address: string;
-}
+import { PenLine } from "lucide-react";
+import { useGetAverageRating } from "@/service/read-function/get-average-rating";
+import { useGetCompanyRatingStats } from "@/service/read-function/get-company-rating-stats";
+import { useGetReputation } from "@/service/read-function/get-reputation";
+import { SEPOLIA } from "@/constant/chain";
+import { useWalletBalance } from "thirdweb/react";
+import ReviewList from "@/components/common/ReviewList";
 
 export default function ReviewPage() {
-  const [search, setSearch] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: "", link: "", address: "" });
-  const [checking, setChecking] = useState(false);
-  const [checkResult, setCheckResult] = useState<null | "found" | "notfound">(null);
-  const [review, setReview] = useState("");
-  const [step, setStep] = useState<"search" | "create" | "review">("search");
-  const [companyInfo, setCompanyInfo] = useState<any>(null);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<any>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -64,12 +26,63 @@ export default function ReviewPage() {
   const { connect } = useConnectModal();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const companyQuery = searchParams.get("query") || "";
   const companyIdParam = searchParams.get("id");
   const companyIdBigInt = companyIdParam ? BigInt(companyIdParam) : null;
-  const { data: queriedCompanyInfo, isLoading: isCompanyLoading } = companyIdBigInt ? useCompanies(companyIdBigInt) : { data: null, isLoading: false };
-  const { data: reviews } = companyIdBigInt ? useGetAllCommentsOfCompany(companyIdBigInt) : { data: [] };
   const writeMode = searchParams.get("write") === "1";
+
+  // Always call hooks at the top level with a safe value
+  const safeCompanyId = companyIdBigInt ?? 0n;
+  const { data: queriedCompanyInfo, isLoading: isCompanyLoading } = useCompanies(safeCompanyId);
+  // Lấy toàn bộ comment chi tiết
+  const { data: reviews } = useGetAllCommentsOfCompany(safeCompanyId);
+  // Lấy điểm rating trung bình
+  const { data: averageRatingRaw } = useGetAverageRating(safeCompanyId);
+  // Lấy thống kê rating
+  const { data: ratingStats } = useGetCompanyRatingStats(safeCompanyId);
+  const averageRating = averageRatingRaw ? (Number(averageRatingRaw) ).toFixed(1) : null;
+  const [starFilter, setStarFilter] = useState<number | null>(null);
+
+  // Thống kê số lượng review theo từng số sao (1-5)
+  const starCounts: Record<number, number> = {1:0,2:0,3:0,4:0,5:0};
+  if (Array.isArray(reviews)) {
+    reviews.forEach((r: any) => {
+      let v = r.rating;
+      if (typeof v === 'bigint') v = Number(v);
+      if (typeof v !== 'number' || isNaN(v)) v = 5;
+      v = Math.round(v);
+      if (starCounts[v] !== undefined) starCounts[v]++;
+    });
+  }
+  // Filter reviews by star (luôn ép rating về number)
+  const filteredReviews = starFilter
+    ? (reviews ?? []).filter((r: any) => {
+        let v = r.rating;
+        if (typeof v === 'bigint') v = Number(v);
+        if (typeof v !== 'number' || isNaN(v)) v = 5;
+        v = Math.round(v);
+        return v === starFilter;
+      })
+    : (reviews ?? []);
+
+  // Lấy danh sách author duy nhất
+  const authors = Array.from(new Set(filteredReviews.map((r: any) => r.author).filter(Boolean)));
+  // Lấy rep từ props (truyền xuống từ trên)
+  const reputations = authors.map(author => ({
+    author,
+    reputation: 0 // Placeholder, will be fetched by ReviewList
+  }));
+
+  // Sort reviews by reputation
+  const sortedReviews = [...(filteredReviews ?? [])].sort((a, b) => (reputations.find(r => r.author === b.author)?.reputation || 0) - (reputations.find(r => r.author === a.author)?.reputation || 0));
+
+  // Lấy tổng reputation của user hiện tại
+  const { data: repRaw, isLoading: repLoading } = useGetReputation(account?.address || "");
+  const { data: balance, isLoading: balanceLoading } = useWalletBalance({
+    client: thirdwebClient,
+    chain: SEPOLIA,
+    address: account?.address,
+  });
+ 
 
   useEffect(() => {
     if (reviews && reviews.length > 0) {
@@ -87,7 +100,6 @@ export default function ReviewPage() {
             setSummary(data.summary);
           }
         } catch (error) {
-          console.error("Failed to fetch summary:", error);
           setSummary("Could not generate a summary at this time.");
         }
         setIsSummarizing(false);
@@ -95,87 +107,6 @@ export default function ReviewPage() {
       fetchSummary();
     }
   }, [reviews]);
-  
-  // Simulate search
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: call API search company
-    setResults([]); // simulate not found
-    setStep("search");
-  };
-
-	// Check website/Google Maps link
-	const handleCheckLink = async () => {
-		setChecking(true);
-		setCheckResult(null);
-		setCompanyInfo(null);
-		try {
-			const res = await fetch("/api/verify-link", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ website: form.link }),
-			});
-			const data = await res.json();
-			if (data.verified) {
-				setCheckResult("found");
-				setCompanyInfo(data.info);
-				setForm((f) => ({
-					...f,
-					name: f.name.trim() === "" ? data.info.title : f.name,
-					link: data.info.link,
-					address:
-						data.info.link.includes("google.com/maps") && data.info.snippet
-							? data.info.snippet
-							: f.address,
-				}));
-			} else {
-				setCheckResult("notfound");
-				setCompanyInfo(null);
-			}
-		} catch {
-			setCheckResult("notfound");
-			setCompanyInfo(null);
-		}
-		setChecking(false);
-	};
-
-  // Handle create company
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCompanies(prev => [
-      ...prev,
-      { ...form, creator: account?.address }
-    ]);
-    setForm({ name: "", link: "", address: "" });
-    setStep("search");
-    setShowCreate(false);
-    setCheckResult(null);
-    setCompanyInfo(null);
-  };
-
-	// Handle submit review
-	const handleSubmitReview = (e: React.FormEvent) => {
-		e.preventDefault();
-		alert("Thank you for your review!");
-		setStep("search");
-		setForm({ name: "", link: "", address: "" });
-		setReview("");
-		setCheckResult(null);
-	};
-
-	// Khi nhấn nút tạo công ty, kiểm tra ví
-	const handleCreateClick = () => {
-		if (!account) {
-			connect({ client: thirdwebClient });
-			return;
-		}
-		setStep("create");
-	};
-
-  const handleSelectCompany = (company: any) => {
-    setSelectedCompany(company);
-    setStep("review");
-  };
 
   if (!companyIdBigInt) {
     return <div className="text-center py-8 text-gray-500">Please select a company to see the details.</div>;
@@ -186,72 +117,18 @@ export default function ReviewPage() {
   if (!queriedCompanyInfo) {
     return <div className="text-center py-8 text-red-500">Company information not found.</div>;
   }
-  if (companyIdBigInt && writeMode) {
-    const [id, name, description, location, website, admin] = queriedCompanyInfo || [];
 
-    // Function to reload reviews (by refreshing router)
-    const handleReviewSuccess = () => {
-      setShowReviewModal(false);
-      router.refresh();
-    };
-
-    return (
-      <div className="max-w-2xl mx-auto py-8">
-        <div className="mb-6 border rounded-xl p-6 bg-white shadow">
-          <div className="font-bold text-2xl mb-1">{name}</div>
-          <div className="text-sm text-gray-500 mb-1">{location}</div>
-          <div className="text-xs text-gray-400 mb-1">Admin: {admin}</div>
-          <div className="text-xs text-gray-400 mb-1">Website: {website}</div>
-        </div>
-        <div className="mt-8 border rounded-xl p-6 bg-gray-50 shadow-md">
-          <h2 className="font-bold mb-2 text-xl flex items-center gap-2">
-            <PenLine className="text-blue-600" /> Reviews for <span className="text-blue-700">{name}</span>
-          </h2>
-          <button
-            className="px-4 py-2 bg-blue-700 text-white rounded font-semibold shadow hover:bg-blue-800"
-            onClick={() => setShowReviewModal(true)}
-          >
-            Write a review
-          </button>
-          <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Write a review for {name}</DialogTitle>
-              </DialogHeader>
-              <ReviewForm companyId={companyIdBigInt} onSuccess={handleReviewSuccess} />
-              <DialogClose asChild>
-                <button className="mt-4 px-4 py-2 bg-gray-200 rounded font-semibold">Close</button>
-              </DialogClose>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-    );
-  }
-
-  // Nếu không ở writeMode, hiển thị chi tiết công ty và các review
   const [id, name, description, location, website, admin, createdAt, exists] = queriedCompanyInfo || [];
-  const averageRating = reviews && reviews.length > 0 ? (
-    reviews.reduce((sum: number, r: any) => sum + (typeof r.votes === 'number' ? r.votes : 5), 0) / reviews.length
-  ).toFixed(1) : null;
-  const starCounts: Record<number, number> = {1:0,2:0,3:0,4:0,5:0};
-  if (Array.isArray(reviews)) {
-    reviews.forEach((r: any) => {
-      const v = typeof r.votes === 'number' ? Math.round(r.votes) : 5;
-      if (v >= 1 && v <= 5) {
-        if (starCounts[v] !== undefined) starCounts[v]++;
-      }
-    });
-  }
+  // Always show 1-5 stars in ranking
+  const allStars = [5, 4, 3, 2, 1];
   function getStarPercent(star: number) {
     const total = reviews?.length || 1;
     return ((starCounts[star] / total) * 100).toFixed(1);
   }
 
-  // Popup logic for review form (always available)
   const handleReviewSuccess = () => {
     setShowReviewModal(false);
-    router.refresh();
+    window.location.reload();
   };
 
   return (
@@ -264,7 +141,11 @@ export default function ReviewPage() {
             {name?.[0] || "🏢"}
           </div>
           <div>
-            <div className="text-3xl font-bold">{name}</div>
+            <div className="text-3xl font-bold flex items-center gap-2">{name}
+              
+            </div>
+            {/* Total Reputation hiển thị ở đây */}
+           
             <div className="flex items-center gap-2 mt-1">
               <a href="#reviews" className="text-blue-600 underline font-medium">{reviews?.length || 0} reviews</a>
               <span className="ml-2 flex items-center gap-1 text-green-600 font-bold">
@@ -287,8 +168,25 @@ export default function ReviewPage() {
           <div className="text-4xl font-extrabold text-green-600">{averageRating || "5.0"}</div>
           <div className="text-sm text-gray-500 mb-2">Excellent</div>
           {/* Bar chart breakdown */}
-          <div className="w-full mt-2 space-y-1">
-            {[5,4,3,2,1].map(star => (
+          <div className="w-full mt-2 space-y-1 flex flex-col">
+            <div className="flex gap-2 mb-2">
+              <span className="font-semibold">Filter by star:</span>
+              {allStars.map(star => (
+                <button
+                  key={star}
+                  className={`px-2 py-1 rounded border text-xs font-semibold ${starFilter === star ? 'bg-blue-700 text-white' : 'bg-white text-blue-700 border-blue-700'} transition`}
+                  onClick={() => setStarFilter(starFilter === star ? null : star)}
+                >
+                  {star}★
+                </button>
+              ))}
+              {starFilter && (
+                <button className="ml-2 px-2 py-1 rounded border text-xs font-semibold bg-gray-200 text-gray-700" onClick={() => setStarFilter(null)}>
+                  Clear
+                </button>
+              )}
+            </div>
+            {allStars.map(star => (
               <div key={star} className="flex items-center gap-2">
                 <span className="w-6 text-xs text-gray-500">{star}-star</span>
                 <div className="flex-1 bg-gray-200 rounded h-2 overflow-hidden">
@@ -299,8 +197,20 @@ export default function ReviewPage() {
             ))}
           </div>
           <div className="text-xs text-gray-400 mt-2">{reviews?.length || 0} reviews</div>
+         
         </div>
       </div>
+      <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Write a review for {name}</DialogTitle>
+          </DialogHeader>
+          <ReviewForm companyId={safeCompanyId} onSuccess={handleReviewSuccess} />
+          <DialogClose asChild>
+            <button className="mt-4 px-4 py-2 bg-gray-200 rounded font-semibold">Close</button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
       {/* Review summary */}
       <div className="mb-8">
         <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 text-gray-700">
@@ -321,46 +231,8 @@ export default function ReviewPage() {
       {/* Danh sách review */}
       <div id="reviews" className="mb-8">
         <h2 className="font-bold text-lg mb-2">Reviews about this company</h2>
-        {Array.isArray(reviews) && reviews.length > 0 ? (
-          <div className="space-y-4">
-            {reviews.map((review: any) => {
-              const content = review?.content || "(No content)";
-              const author = review?.author ? `${review.author.slice(0, 8)}...${review.author.slice(-4)}` : "Anonymous";
-              const createdAt = review?.createdAt ? new Date(Number(review.createdAt) * 1000).toLocaleDateString() : null;
-              const votes = typeof review?.votes !== 'undefined' ? review.votes : 0;
-              let commentId;
-              try { commentId = BigInt(review.id); } catch { commentId = undefined; }
-              return (
-                <div key={review.id} className="border rounded p-4 bg-gray-50">
-                  <div className="text-sm text-gray-700 mb-1" dangerouslySetInnerHTML={{ __html: linkify(content) }} />
-                  <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
-                    <span>Author: {author}</span>
-                    {createdAt && <span>Date: {createdAt}</span>}
-                    <span className="flex items-center gap-1">
-                      <span className="text-gray-700 font-semibold mr-1">{votes}</span>
-                      {commentId !== undefined && <UpvoteButton commentId={commentId} />}
-                      {commentId !== undefined && <DownvoteButton commentId={commentId} />}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-gray-500">There are no reviews for this company yet.</div>
-        )}
+        <ReviewList reviews={sortedReviews} />
       </div>
-      <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Write a review for {name}</DialogTitle>
-          </DialogHeader>
-          <ReviewForm companyId={companyIdBigInt} onSuccess={handleReviewSuccess} />
-          <DialogClose asChild>
-            <button className="mt-4 px-4 py-2 bg-gray-200 rounded font-semibold">Close</button>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -404,7 +276,42 @@ function ReviewForm({ companyId, onSuccess }: { companyId: bigint, onSuccess?: (
       </div>
     </form>
   );
-} 
+}
+
+function ReviewItem({ review }: { review: any }) {
+  const content = review?.content || "(No content)";
+  const author = review?.author ? `${review.author.slice(0, 8)}...${review.author.slice(-4)}` : "Anonymous";
+  const createdAt = review?.createdAt ? new Date(Number(review.createdAt) * 1000).toLocaleDateString() : null;
+  const votes = typeof review?.votes !== 'undefined' ? review.votes : 0;
+  const rating = typeof review?.rating !== 'undefined' ? review.rating : null;
+  let commentId;
+  try { commentId = BigInt(review.id); } catch { commentId = undefined; }
+  // const { data: repData } = useGetReputation(review.author);
+  // const rep = repData ? Number(repData) : 0;
+  // Lấy rep từ props (truyền xuống từ trên)
+  return (
+    <div className="border rounded p-4 bg-gray-50">
+      <div className="text-sm text-gray-700 mb-1" dangerouslySetInnerHTML={{ __html: linkify(content) }} />
+      <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
+        <span>Author: {author}</span>
+        {createdAt && <span>Date: {createdAt}</span>}
+        {rating !== null && (
+          <span className="flex items-center gap-1 text-yellow-500 font-bold">
+            Rating:
+            <span>{rating}</span>
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.05 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z"/></svg>
+          </span>
+        )}
+        <span className="ml-2 text-xs text-purple-700 font-bold">Reputation: {review.reputation ?? 0}</span>
+        <span className="flex items-center gap-1">
+          <span className="text-gray-700 font-semibold mr-1">{votes}</span>
+          {commentId !== undefined && <UpvoteButton commentId={commentId} />}
+          {commentId !== undefined && <DownvoteButton commentId={commentId} />}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function linkify(text: string) {
   const urlRegex = /(https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+)|(www\.[\w\-._~:/?#[\]@!$&'()*+,;=%]+)/gi;

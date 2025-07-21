@@ -10,9 +10,10 @@ import getThirdwebContract from "../get-contract";
 interface SetStatusProps {
 	status: string;
 	onSuccess?: () => void;
+	disabled?: boolean;
 }
 
-export default function SetStatus({ status, onSuccess }: SetStatusProps) {
+export default function SetStatus({ status, onSuccess, disabled }: SetStatusProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [currentStep, setCurrentStep] = useState<TransactionStep>("sent");
 	const [message, setMessage] = useState("");
@@ -50,6 +51,7 @@ export default function SetStatus({ status, onSuccess }: SetStatusProps) {
 						setCurrentStep("error");
 						setMessage("Failed to set status: " + error.message);
 					}}
+					disabled={disabled}
 				>
 					Set Status
 				</TransactionButton>

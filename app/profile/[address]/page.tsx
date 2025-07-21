@@ -22,6 +22,10 @@ interface ProfilePageProps {
 	}>;
 }
 
+function isValidAddress(address: string) {
+	return /^0x[a-fA-F0-9]{40}$/.test(address);
+}
+
 export default function DynamicProfilePage({ params }: ProfilePageProps) {
 	const router = useRouter();
 	const account = useActiveAccount();
@@ -57,16 +61,41 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 		}
 	}, [account?.address, decodedAddress, router]);
 
-	const { data: comments } = useGetCommentsByUser(decodedAddress);
+	// Luôn gọi hook, truyền address hợp lệ hoặc address rỗng (0x00...) nếu không hợp lệ
+	const validAddress = isValidAddress(decodedAddress) ? decodedAddress : "0x0000000000000000000000000000000000000000";
+	const { data: comments } = useGetCommentsByUser(validAddress);
 	const { data: companies } = useGetAllCompanies();
-	const { data: feedPosts, isLoading: feedLoading } = useFeedPosts(decodedAddress);
-	const { data: repRaw, isLoading: repLoading } = useGetReputation(decodedAddress);
+	const { data: feedPosts, isLoading: feedLoading } = useFeedPosts(validAddress);
+	const { data: repRaw, isLoading: repLoading } = useGetReputation(validAddress);
 	const { data: balance, isLoading: balanceLoading } = useWalletBalance({
 		client: thirdwebClient,
 		chain: SEPOLIA,
-		address: account?.address,
+		address: validAddress,
 	});
 
+	// Show loading state
+	if (isLoading) {
+		return (
+			<div className="bg-background my-4 flex min-h-screen items-center justify-center">
+				<div className="text-center">
+					<div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+					<p className="text-muted-foreground">Loading profile...</p>
+				</div>
+			</div>
+		);
+	}
+
+	// User data cho UI
+	const isValid = isValidAddress(decodedAddress);
+	const userData: ProfileUserData = {
+		name: isValid ? `${decodedAddress.slice(0, 6)}...${decodedAddress.slice(-4)}` : "Invalid address",
+		username: isValid ? decodedAddress.slice(2, 8) : "invalid",
+		bio: isValid ? "Web3 Developer & Blockchain Enthusiast. Building the future of decentralized applications." : "Invalid or missing address.",
+		following: 0,
+		followers: 0,
+		website: isValid ? "https://example.com" : "",
+		joinedDate: "Apr 2024",
+	};
 	const reputation = repRaw ? Number(repRaw) : 0;
 	const totalReputation = reputation + (balance ? Number(balance.displayValue) : 0) * 100;
 
@@ -86,31 +115,6 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 	const renderStars = (rating: number): string => {
 		return "★".repeat(rating) + "☆".repeat(5 - rating);
 	};
-
-	// User data for the profile being viewed
-	const userData: ProfileUserData = {
-		name: decodedAddress
-			? `${decodedAddress.slice(0, 6)}...${decodedAddress.slice(-4)}`
-			: "Anonymous",
-		username: decodedAddress ? decodedAddress.slice(2, 8) : "anonymous",
-		bio: "Web3 Developer & Blockchain Enthusiast. Building the future of decentralized applications.",
-		following: 193,
-		followers: 15757,
-		website: "https://example.com",
-		joinedDate: "Apr 2024",
-	};
-
-	// Show loading state
-	if (isLoading) {
-		return (
-			<div className="bg-background my-4 flex min-h-screen items-center justify-center">
-				<div className="text-center">
-					<div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-					<p className="text-muted-foreground">Loading profile...</p>
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<div className="bg-background my-4 min-h-screen">
@@ -144,21 +148,21 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 						{/* Profile Picture */}
 						<div className="relative -mt-14 ml-5 size-20 sm:-mt-24 sm:size-36">
 							<div className="ring-background flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-bold text-white ring-3 sm:size-36 sm:text-3xl dark:ring-black">
-								{decodedAddress ? decodedAddress.slice(2, 4).toUpperCase() : "??"}
+								{isValid ? decodedAddress.slice(2, 4).toUpperCase() : "??"}
 							</div>
 						</div>
 
 						{/* Action Buttons */}
 						<div className="flex items-center gap-x-2">
-							<Button variant="outline" size="sm">
+							<Button variant="outline" size="sm" disabled={!isValid}>
 								Follow
 							</Button>
-							<Button variant="outline" size="sm">
+							<Button variant="outline" size="sm" disabled={!isValid}>
 								<svg className="mr-1 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
 									<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
 								</svg>
 							</Button>
-							<Button variant="outline" size="sm">
+							<Button variant="outline" size="sm" disabled={!isValid}>
 								<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
 										strokeLinecap="round"
@@ -186,13 +190,19 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 						</div>
 						{/* Reputation Display */}
 						<div className="mt-2 flex flex-col gap-1 text-sm">
-							<span>
-								<b>Total Reputation:</b>{" "}
-								{repLoading || balanceLoading ? "..." : totalReputation.toFixed()}
-							</span>
-							<span className="text-xs text-gray-500">
-								Formula: total = reputation + (USDC * 100)
-							</span>
+							{isValid ? (
+								<>
+									<span>
+										<b>Total Reputation:</b>{" "}
+										{repLoading || balanceLoading ? "..." : totalReputation.toFixed()}
+									</span>
+									<span className="text-xs text-gray-500">
+										Formula: total = reputation + (USDC * 100)
+									</span>
+								</>
+							) : (
+								<span className="text-red-500 font-semibold">Invalid or missing address. User not found.</span>
+							)}
 						</div>
 					</div>
 
@@ -204,11 +214,11 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 					{/* Stats */}
 					<div className="space-y-5">
 						<div className="flex gap-8">
-							<button className="flex gap-x-1 transition-opacity hover:opacity-80">
+							<button className="flex gap-x-1 transition-opacity hover:opacity-80" disabled={!isValid}>
 								<b>{userData.following}</b>
 								<span className="text-muted-foreground">Following</span>
 							</button>
-							<button className="flex gap-x-1 transition-opacity hover:opacity-80">
+							<button className="flex gap-x-1 transition-opacity hover:opacity-80" disabled={!isValid}>
 								<b>{userData.followers.toLocaleString()}</b>
 								<span className="text-muted-foreground">Followers</span>
 							</button>
@@ -216,19 +226,21 @@ export default function DynamicProfilePage({ params }: ProfilePageProps) {
 
 						{/* Links and Info */}
 						<div className="flex flex-wrap gap-x-5 gap-y-2">
-							<div className="flex items-center gap-2">
-								<div className="size-4 rounded-full bg-blue-500"></div>
-								<div className="truncate">
-									<a
-										href={userData.website}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="text-blue-500 hover:underline"
-									>
-										{userData.website.replace("https://", "")}
-									</a>
+							{isValid && userData.website && (
+								<div className="flex items-center gap-2">
+									<div className="size-4 rounded-full bg-blue-500"></div>
+									<div className="truncate">
+										<a
+											href={userData.website}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-blue-500 hover:underline"
+										>
+											{userData.website.replace("https://", "")}
+										</a>
+									</div>
 								</div>
-							</div>
+							)}
 							<div className="flex items-center gap-2">
 								<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
