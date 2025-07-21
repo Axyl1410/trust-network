@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Web3Avatar } from "@/components/ui/web3-avatar";
 import { SEPOLIA } from "@/constant/chain";
 import { thirdwebClient } from "@/lib/thirdweb";
-import { useStatusUpdate, useFeedPosts } from "@/service/event-function/status-update";
+import { useFeedPosts } from "@/service/event-function/status-update";
 import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetCommentsByUser } from "@/service/read-function/get-comments-by-user";
 import { useGetReputation } from "@/service/read-function/get-reputation";
@@ -21,31 +21,18 @@ import {
 	formatUserDisplayName,
 } from "@/utils/format";
 import { useActiveAccount, useWalletBalance } from "thirdweb/react";
-import ReviewList from "@/components/common/ReviewList";
 
 export default function ProfilePage() {
 	const account = useActiveAccount();
-	const address = account?.address;
-
-	if (!address) {
-		return (
-			<div className="flex items-center justify-center min-h-screen">
-				<div className="text-center text-gray-500 text-lg font-semibold">
-					Please connect your wallet to view your profile.
-				</div>
-			</div>
-		);
-	}
-
 	const { data: balance, isLoading } = useWalletBalance({
 		client: thirdwebClient,
 		chain: SEPOLIA,
-		address,
+		address: account?.address,
 	});
-	const { data: comments } = useGetCommentsByUser(address);
+	const { data: comments } = useGetCommentsByUser(account?.address || "");
 	const { data: companies } = useGetAllCompanies();
-	const { data: feedPosts, isLoading: feedLoading } = useFeedPosts(address);
-	const { data: repRaw, isLoading: repLoading } = useGetReputation(address);
+	const { data: feedPosts, isLoading: feedLoading } = useFeedPosts(account?.address || "");
+	const { data: repRaw, isLoading: repLoading } = useGetReputation(account?.address || "");
 
 	const reputation = repRaw ? Number(repRaw) : 0;
 	const totalReputation = reputation + (balance ? Number(balance.displayValue) : 0) * 100;
@@ -223,6 +210,7 @@ export default function ProfilePage() {
 						<TabsContent value="feed" className="mt-6 px-5 md:px-0">
 							{/* Status Update Form */}
 							<StatusUpdateForm />
+
 							<div className="space-y-6">
 								{feedLoading ? (
 									<div className="py-8 text-center">
@@ -230,7 +218,7 @@ export default function ProfilePage() {
 										<p className="text-muted-foreground">Loading feed...</p>
 									</div>
 								) : feedPosts && feedPosts.length > 0 ? (
-									feedPosts.map((post) => <FeedPostComponent key={post.id} post={post} />)
+									feedPosts.reverse().map((post) => <FeedPostComponent key={post.id} post={post} />)
 								) : (
 									<div className="py-8 text-center">
 										<p className="text-muted-foreground">No feed posts found.</p>
