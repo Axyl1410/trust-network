@@ -1,19 +1,12 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound } from "next/navigation";
 import { isAddress } from "thirdweb";
 import { useActiveAccount } from "thirdweb/react";
 
-interface ProfileLayoutProps {
-	children: React.ReactNode;
-}
-
-export default function ProfileLayout({ children }: ProfileLayoutProps) {
+export default function ProfileLayout({ children }: { children: React.ReactNode }) {
 	const account = useActiveAccount();
 
-	// If no account is connected, show login message
 	if (!account?.address) {
 		return (
 			<div className="bg-background min-h-screen">
@@ -95,5 +88,5 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
 		return notFound();
 	}
 
-	return <>{children}</>;
+	return <div>{children}</div>;
 }

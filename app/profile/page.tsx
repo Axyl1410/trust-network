@@ -7,48 +7,35 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Web3Avatar } from "@/components/ui/web3-avatar";
+import { SEPOLIA } from "@/constant/chain";
+import { thirdwebClient } from "@/lib/thirdweb";
 import { useFeedPosts } from "@/service/event-function/status-update";
 import { useGetAllCompanies } from "@/service/read-function/get-all-companies";
 import { useGetCommentsByUser } from "@/service/read-function/get-comments-by-user";
+import { useGetReputation } from "@/service/read-function/get-reputation";
 import { Comment, Company, ProfileUserData } from "@/types";
-import { FeedPost } from "@/types/common";
 import {
 	formatCommentDate,
 	formatCompanyName,
 	formatRating,
 	formatUserDisplayName,
 } from "@/utils/format";
-import { useActiveAccount } from "thirdweb/react";
-
-// Mock data for feed posts (fallback when no real posts exist)
-const mockFeedPosts: FeedPost[] = [
-	{
-		id: "mock-1",
-		user: "0x2349Db8bdf85bd80bFc4afb715a69fb4C6463B96",
-		content:
-			"Getting Started with Web3 Development - Web3 development is revolutionizing how we build applications. In this post, I'll share my journey and some key insights...",
-		timestamp: BigInt(Math.floor(Date.now() / 1000) - 3600), // 1 hour ago
-		likes: 42,
-		comments: 8,
-		shares: 3,
-	},
-	{
-		id: "mock-2",
-		user: "0x2349Db8bdf85bd80bFc4afb715a69fb4C6463B96",
-		content:
-			"Understanding Smart Contracts - Smart contracts are self-executing contracts with the terms of the agreement directly written into code...",
-		timestamp: BigInt(Math.floor(Date.now() / 1000) - 7200), // 2 hours ago
-		likes: 67,
-		comments: 12,
-		shares: 5,
-	},
-];
+import { useActiveAccount, useWalletBalance } from "thirdweb/react";
 
 export default function ProfilePage() {
 	const account = useActiveAccount();
+	const { data: balance, isLoading } = useWalletBalance({
+		client: thirdwebClient,
+		chain: SEPOLIA,
+		address: account?.address,
+	});
 	const { data: comments } = useGetCommentsByUser(account?.address || "");
 	const { data: companies } = useGetAllCompanies();
 	const { data: feedPosts, isLoading: feedLoading } = useFeedPosts(account?.address || "");
+	const { data: repRaw, isLoading: repLoading } = useGetReputation(account?.address || "");
+
+	const reputation = repRaw ? Number(repRaw) : 0;
+	const totalReputation = reputation + (balance ? Number(balance.displayValue) : 0) * 100;
 
 	// Tìm tên công ty theo companyId
 	const getCompanyName = (companyId: bigint): string => {
@@ -141,6 +128,16 @@ export default function ProfilePage() {
 								@{userData.username}
 							</span>
 						</div>
+						{/* Reputation Display */}
+						<div className="mt-2 flex flex-col gap-1 text-sm">
+							<span>
+								<b>Total Reputation:</b>{" "}
+								{repLoading || isLoading ? "..." : totalReputation.toFixed()}
+							</span>
+							<span className="text-xs text-gray-500">
+								Formula: total = reputation + (token * 100)
+							</span>
+						</div>
 					</div>
 
 					{/* Bio */}
@@ -223,10 +220,8 @@ export default function ProfilePage() {
 								) : feedPosts && feedPosts.length > 0 ? (
 									feedPosts.reverse().map((post) => <FeedPostComponent key={post.id} post={post} />)
 								) : (
-									<div className="space-y-6">
-										{mockFeedPosts.map((post) => (
-											<FeedPostComponent key={post.id} post={post} />
-										))}
+									<div className="py-8 text-center">
+										<p className="text-muted-foreground">No feed posts found.</p>
 									</div>
 								)}
 							</div>

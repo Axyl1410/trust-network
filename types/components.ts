@@ -2,7 +2,7 @@
 export interface CreateCommentProps {
 	companyId: bigint;
 	content: string;
-	rating: number;
+	rating: bigint;
 }
 
 export interface CreateCompanyProps {

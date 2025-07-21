@@ -7,7 +7,12 @@ import { prepareContractCall } from "thirdweb";
 import { TransactionButton } from "thirdweb/react";
 import getThirdwebContract from "../get-contract";
 
-export default function CreateComment({ companyId, content, rating }: CreateCommentProps) {
+export default function CreateComment({
+	companyId,
+	content,
+	rating,
+	onSuccess,
+}: CreateCommentProps & { onSuccess?: () => void }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [currentStep, setCurrentStep] = useState<TransactionStep>("sent");
 	const [message, setMessage] = useState("");
@@ -17,17 +22,20 @@ export default function CreateComment({ companyId, content, rating }: CreateComm
 		if (currentStep === "success" || currentStep === "error") setIsOpen(open);
 	};
 
+	const isButtonDisabled = !content.trim();
+
 	return (
 		<>
-			<Button className="relative" asChild>
+			<Button className="relative" asChild disabled={isButtonDisabled}>
 				<TransactionButton
+					disabled={isButtonDisabled}
 					unstyled
 					transaction={async () => {
 						const transaction = prepareContractCall({
 							contract,
 							method:
 								"function createComment(uint256 companyId, string content, uint256 rating) returns (uint256)",
-							params: [companyId, content, BigInt(rating)],
+							params: [companyId, content, rating],
 						});
 
 						setIsOpen(true);
@@ -40,6 +48,7 @@ export default function CreateComment({ companyId, content, rating }: CreateComm
 					onTransactionConfirmed={() => {
 						setCurrentStep("success");
 						setMessage("Transaction is being confirmed...");
+						onSuccess?.();
 					}}
 					onError={(error) => {
 						setCurrentStep("error");

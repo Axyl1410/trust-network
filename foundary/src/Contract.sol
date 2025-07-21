@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract CompanyCommentVoteV3 {
+contract CompanyCommentVoteV5 {
     struct Company {
         uint id;
         string name;
@@ -196,13 +196,13 @@ contract CompanyCommentVoteV3 {
         Comment storage c = comments[commentId];
         require(!c.hidden, "Comment is hidden");
         hasVoted[commentId][msg.sender] = true;
+
         if (isUpvote) {
             c.votes += 1;
             c.upvotes += 1;
         } else {
             c.votes -= 1;
             c.downvotes += 1;
-            reputation[c.author] -= 1;
         }
         emit Voted(commentId, msg.sender, isUpvote);
     }
@@ -320,9 +320,27 @@ contract CompanyCommentVoteV3 {
         );
     }
 
-    // Get reputation
+    // Calculate reputation based on comment vote totals
+    function calculateReputation(address user) public view returns (int) {
+        uint[] memory userCommentIds = userComments[user];
+        int totalReputation = 0;
+
+        for (uint i = 0; i < userCommentIds.length; i++) {
+            Comment memory comment = comments[userCommentIds[i]];
+            if (comment.votes > 0) {
+                totalReputation += 1; // Positive votes = +1 reputation
+            } else if (comment.votes < 0) {
+                totalReputation -= 1; // Negative votes = -1 reputation
+            }
+            // If votes = 0, no reputation change
+        }
+
+        return totalReputation;
+    }
+
+    // Get reputation (now calculated dynamically)
     function getReputation(address user) public view returns (int) {
-        return reputation[user];
+        return calculateReputation(user);
     }
 
     // Get all companies
