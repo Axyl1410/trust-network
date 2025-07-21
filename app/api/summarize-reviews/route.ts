@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-<<<<<<< HEAD
 import { InferenceClient } from "@huggingface/inference";
 
 export async function POST(req: NextRequest) {
@@ -59,10 +58,3 @@ ${translatedReviews}`,
     return NextResponse.json({ error: "Could not summarize reviews" }, { status: 500 });
   }
 }
-=======
-
-export async function POST(req: NextRequest) {
-	// Example: just return a static message
-	return NextResponse.json({ message: "Summarized!" });
-}
->>>>>>> 891ee2af3c41907a4e19edc8da4d180db593f623
