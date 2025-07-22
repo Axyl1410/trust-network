@@ -66,14 +66,6 @@ export default function DynamicProfilePage() {
 		<div className="bg-background my-4 min-h-screen">
 			{/* Main Profile Container */}
 			<div className="container mx-auto max-w-4xl">
-				{/* Mobile Action Buttons */}
-				<div className="mt-5 ml-auto flex w-full items-center gap-x-2 px-5 md:w-[22.5rem] md:px-0 lg:hidden">
-					<Button variant="outline" className="w-full">
-						Signup
-					</Button>
-					<Button className="w-full">Login</Button>
-				</div>
-
 				{/* Cover Image */}
 				<div className="mx-auto">
 					<div
